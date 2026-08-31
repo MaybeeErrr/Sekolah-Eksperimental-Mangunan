@@ -1035,6 +1035,13 @@
     var b = (state.settings && state.settings.bobot) || {harian:30, uts:30, uas:40};
     return {harian: Number(b.harian) || 0, uts: Number(b.uts) || 0, uas: Number(b.uas) || 0};
   }
+  function liveBobot(){
+    var fh = qs('#bn-set-bobot-harian'), fu = qs('#bn-set-bobot-uts'), fa = qs('#bn-set-bobot-uas');
+    if(fh && fu && fa && fh.value !== '' && fu.value !== '' && fa.value !== ''){
+      return {harian: Number(fh.value) || 0, uts: Number(fu.value) || 0, uas: Number(fa.value) || 0};
+    }
+    return currentBobot();
+  }
   function nilaiAkhir(tugas, uts, uas){
     var t = parseFloat(tugas), u = parseFloat(uts), a = parseFloat(uas);
     if(isNaN(t) && isNaN(u) && isNaN(a)) return null;
@@ -1045,7 +1052,7 @@
   function updateNilaiDesc(){
     var el = qs('#bn-page-nilai .desc');
     if(!el) return;
-    var b = currentBobot();
+    var b = liveBobot();
     el.textContent = 'Nilai Akhir dihitung otomatis: ' + b.harian + '% Harian, ' + b.uts + '% UTS, ' + b.uas + '% UAS.';
   }
   function predikatFor(nilai){
@@ -1115,7 +1122,7 @@
     el.style.color = total === 100 ? 'var(--ok)' : 'var(--red)';
   }
   qsa('#bn-set-bobot-harian, #bn-set-bobot-uts, #bn-set-bobot-uas').forEach(function(inp){
-    inp.addEventListener('input', updateBobotTotal);
+    inp.addEventListener('input', function(){ updateBobotTotal(); updateNilaiDesc(); });
   });
   qs('#bn-simpan-setting').addEventListener('click', function(){
     var h = Number(qs('#bn-set-bobot-harian').value);
