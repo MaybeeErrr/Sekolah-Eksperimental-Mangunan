@@ -466,8 +466,23 @@
             <div class="bn-panel">
               <div class="bn-panel-head">
                 <div>
+                  <h2>Bobot nilai akhir</h2>
+                  <div class="desc">Atur persentase Harian, UTS, dan UAS yang membentuk Nilai Akhir. Total ketiganya harus 100%.</div>
+                </div>
+              </div>
+              <div class="bn-row">
+                <div class="bn-field" style="max-width:140px;"><label>Harian (%)</label><input id="bn-set-bobot-harian" type="number" min="0" max="100"></div>
+                <div class="bn-field" style="max-width:140px;"><label>UTS (%)</label><input id="bn-set-bobot-uts" type="number" min="0" max="100"></div>
+                <div class="bn-field" style="max-width:140px;"><label>UAS (%)</label><input id="bn-set-bobot-uas" type="number" min="0" max="100"></div>
+                <div class="bn-mini" id="bn-bobot-total" style="align-self:center;"></div>
+              </div>
+              <button class="bn-pill-btn outline" id="bn-simpan-bobot">Simpan bobot</button>
+            </div>
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
                   <h2>Input nilai</h2>
-                  <div class="desc">Nilai Akhir dihitung otomatis: 30% Harian, 30% UTS, 40% UAS.</div>
+                  <div class="desc" id="bn-nilai-desc">Nilai Akhir dihitung otomatis: 30% Harian, 30% UTS, 40% UAS.</div>
                 </div>
                 <div class="bn-row" style="margin-bottom:0;">
                   <div class="bn-field" style="min-width:160px;">
@@ -507,15 +522,6 @@
                 <div class="bn-field"><label>Kota (baris tanggal rapor)</label><input id="bn-set-kota" type="text" placeholder="Contoh: Yogyakarta"></div>
               </div>
               <div class="bn-mini" style="margin:-4px 0 14px 0;">Tanggal pada rapor terisi otomatis sesuai tanggal hari ini saat diunduh.</div>
-
-              <h3 style="font-size:15px;color:var(--green-dark);margin:4px 0 10px 0;">Bobot nilai akhir</h3>
-              <div class="desc" style="margin-bottom:12px;">Atur persentase Harian, UTS, dan UAS yang membentuk Nilai Akhir. Total ketiganya harus 100%.</div>
-              <div class="bn-row">
-                <div class="bn-field" style="max-width:140px;"><label>Harian (%)</label><input id="bn-set-bobot-harian" type="number" min="0" max="100"></div>
-                <div class="bn-field" style="max-width:140px;"><label>UTS (%)</label><input id="bn-set-bobot-uts" type="number" min="0" max="100"></div>
-                <div class="bn-field" style="max-width:140px;"><label>UAS (%)</label><input id="bn-set-bobot-uas" type="number" min="0" max="100"></div>
-                <div class="bn-mini" id="bn-bobot-total" style="align-self:center;"></div>
-              </div>
 
               <button class="bn-pill-btn outline" id="bn-simpan-setting">Simpan pengaturan</button>
             </div>
@@ -1050,7 +1056,7 @@
     return Math.round(t*(b.harian/100) + u*(b.uts/100) + a*(b.uas/100));
   }
   function updateNilaiDesc(){
-    var el = qs('#bn-page-nilai .desc');
+    var el = qs('#bn-nilai-desc');
     if(!el) return;
     var b = liveBobot();
     el.textContent = 'Nilai Akhir dihitung otomatis: ' + b.harian + '% Harian, ' + b.uts + '% UTS, ' + b.uas + '% UAS.';
@@ -1124,7 +1130,7 @@
   qsa('#bn-set-bobot-harian, #bn-set-bobot-uts, #bn-set-bobot-uas').forEach(function(inp){
     inp.addEventListener('input', function(){ updateBobotTotal(); updateNilaiDesc(); });
   });
-  qs('#bn-simpan-setting').addEventListener('click', function(){
+  qs('#bn-simpan-bobot').addEventListener('click', function(){
     var h = Number(qs('#bn-set-bobot-harian').value);
     var u = Number(qs('#bn-set-bobot-uts').value);
     var a = Number(qs('#bn-set-bobot-uas').value);
@@ -1132,18 +1138,23 @@
       toast('Total bobot Harian + UTS + UAS harus tepat 100%.');
       return;
     }
-    state.settings = {
+    state.settings = Object.assign({}, state.settings, {bobot: {harian:h, uts:u, uas:a}});
+    sSet('bn-settings', state.settings, true).then(function(){
+      toast('Bobot nilai akhir disimpan.');
+      updateNilaiDesc();
+      renderNilaiTable();
+    });
+  });
+  qs('#bn-simpan-setting').addEventListener('click', function(){
+    state.settings = Object.assign({}, state.settings, {
       namaSekolah: qs('#bn-set-sekolah').value.trim() || 'Sekolah Dasar',
       kepsek: qs('#bn-set-kepsek').value.trim(),
       kota: qs('#bn-set-kota').value.trim(),
       tahunAjaran: qs('#bn-set-tahun').value.trim() || '-',
-      semester: qs('#bn-set-semester').value,
-      bobot: {harian:h, uts:u, uas:a}
-    };
+      semester: qs('#bn-set-semester').value
+    });
     sSet('bn-settings', state.settings, true).then(function(){
       toast('Pengaturan rapor disimpan.');
-      updateNilaiDesc();
-      renderNilaiTable();
     });
   });
 
