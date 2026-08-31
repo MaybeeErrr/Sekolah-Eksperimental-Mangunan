@@ -163,8 +163,16 @@
   .bn-nav button:hover{background:rgba(255,255,255,0.06);}
   .bn-nav button.active{background:var(--green-dark);color:#F7F4E7;}
   .bn-nav button.active .dot{background:var(--gold);opacity:1;}
-  .bn-logout{padding:10px 12px;border-radius:4px;color:#C9AFA6;font-size:13px;text-align:left;}
-  .bn-logout:hover{background:rgba(255,255,255,0.06);}
+  .bn-sidebar-bottom{border-top:1px solid rgba(231,233,220,0.12);padding-top:12px;margin-top:8px;}
+  .bn-logout{
+    width:100%;display:flex;align-items:center;gap:9px;
+    padding:10px 12px;border-radius:6px;
+    background:transparent;border:1px solid rgba(239,233,216,0.14);
+    color:#E3AFA2;font-size:13px;font-weight:500;text-align:left;
+    transition:background .15s,border-color .15s,color .15s;
+  }
+  .bn-logout svg{flex:none;opacity:.85;}
+  .bn-logout:hover{background:rgba(217,94,74,0.14);border-color:rgba(217,94,74,0.4);color:#F6D4CB;}
 
   .bn-main{flex:1;padding:26px 32px;overflow:auto;background:
     repeating-linear-gradient(var(--paper),var(--paper) 27px,var(--line) 28px);
@@ -279,7 +287,8 @@
     .bn-side-logo-wrap{margin-bottom:0;width:34px;height:34px;border-radius:9px;}
     .bn-nav{flex-direction:row;flex:none;}
     .bn-nav button{flex:none;white-space:nowrap;}
-    .bn-logout{margin-left:auto;flex:none;white-space:nowrap;}
+    .bn-sidebar-bottom{border-top:none;margin:0;padding:0;margin-left:auto;flex:none;}
+    .bn-logout{white-space:nowrap;}
     .bn-main{padding:14px;}
     .bn-panel{padding:16px 14px;}
     .bn-panel-head{align-items:flex-start;}
@@ -407,7 +416,12 @@
           <button data-view="peringkat"><span class="dot"></span>Peringkat</button>
           <button data-view="rapot"><span class="dot"></span>Rekap &amp; Rapor</button>
         </nav>
-        <button class="bn-logout" id="bn-logout">Keluar</button>
+        <div class="bn-sidebar-bottom">
+          <button class="bn-logout" id="bn-logout">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            Keluar
+          </button>
+        </div>
       </aside>
 
       <main class="bn-main">
