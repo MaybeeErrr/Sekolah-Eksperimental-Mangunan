@@ -44,7 +44,10 @@ module.exports = async function handler(req, res) {
     `;
 
     setSessionCookie(res, id);
-    return res.status(200).json({ guru: { id, nama, mapel, mapelSlug } });
+    // Pendaftaran mandiri selalu jadi akun "guru" biasa (bukan admin).
+    // Akun admin hanya bisa dibuat oleh admin lain lewat menu Kelola Akun,
+    // atau diatur manual pertama kali lewat SQL di database.
+    return res.status(200).json({ guru: { id, nama, mapel, mapelSlug, role: 'guru' } });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ error: e.message || 'Terjadi kesalahan server.' });

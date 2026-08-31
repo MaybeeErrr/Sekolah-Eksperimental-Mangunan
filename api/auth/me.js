@@ -12,7 +12,7 @@ module.exports = async function handler(req, res) {
 
     const sql = getSql();
     const rows = await sql`
-      select id, nama, mapel, mapel_slug as "mapelSlug"
+      select id, nama, mapel, mapel_slug as "mapelSlug", role
       from guru
       where id = ${guruId}
     `;

@@ -415,6 +415,7 @@
           <button data-view="nilai"><span class="dot"></span>Input Nilai</button>
           <button data-view="peringkat"><span class="dot"></span>Peringkat</button>
           <button data-view="rapot"><span class="dot"></span>Rekap &amp; Rapor</button>
+          <button data-view="akun" id="bn-nav-akun" class="hidden"><span class="dot"></span>Kelola Akun</button>
         </nav>
         <div class="bn-sidebar-bottom">
           <button class="bn-logout" id="bn-logout">
@@ -583,6 +584,71 @@
                 </div>
               </div>
               <div id="bn-peringkat-body"><div class="bn-empty">Klik <b>Perbarui peringkat</b> untuk menyusun papan peringkat terbaru.</div></div>
+            </div>
+          </div>
+
+          <!-- AKUN (khusus admin) -->
+          <div class="bn-page hidden" id="bn-page-akun">
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Tambah akun</h2>
+                  <div class="desc">Buat akun guru baru, atau jadikan admin agar bisa mengelola akun lain.</div>
+                </div>
+              </div>
+              <form id="bn-form-akun">
+                <div class="bn-row">
+                  <div class="bn-field">
+                    <label for="bn-akun-nama">Nama guru</label>
+                    <input type="text" id="bn-akun-nama" placeholder="Contoh: Ibu Sri Wahyuni">
+                  </div>
+                  <div class="bn-field">
+                    <label for="bn-akun-mapel">Mata pelajaran yang diampu</label>
+                    <select id="bn-akun-mapel">
+                      <option value="">Pilih mata pelajaran</option>
+                      <option>Pendidikan Agama dan Budi Pekerti</option>
+                      <option>Pendidikan Pancasila</option>
+                      <option>Bahasa Indonesia</option>
+                      <option>Matematika</option>
+                      <option>IPAS (Ilmu Pengetahuan Alam dan Sosial)</option>
+                      <option>PJOK</option>
+                      <option>Seni Budaya</option>
+                      <option>Bahasa Inggris</option>
+                      <option>Muatan Lokal</option>
+                      <option value="__lain__">Lainnya&hellip;</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="bn-field hidden" id="bn-akun-mapel-lain-wrap">
+                  <label for="bn-akun-mapel-lain">Nama mata pelajaran</label>
+                  <input type="text" id="bn-akun-mapel-lain" placeholder="Tulis nama mata pelajaran">
+                </div>
+                <div class="bn-row">
+                  <div class="bn-field">
+                    <label for="bn-akun-pass">Buat kata sandi</label>
+                    <input type="password" id="bn-akun-pass" placeholder="Minimal 4 karakter">
+                  </div>
+                  <div class="bn-field" style="max-width:220px;">
+                    <label for="bn-akun-role">Peran</label>
+                    <select id="bn-akun-role">
+                      <option value="guru">Guru mata pelajaran</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" class="bn-btn gold">Buat akun</button>
+                <div id="bn-akun-msg"></div>
+              </form>
+            </div>
+
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Daftar akun</h2>
+                  <div class="desc">Semua akun yang terdaftar di aplikasi ini.</div>
+                </div>
+              </div>
+              <div id="bn-akun-list"></div>
             </div>
           </div>
 
@@ -787,6 +853,7 @@
     qs('#bn-view-dashboard').classList.remove('hidden');
     qs('#bn-who').textContent = state.guru.nama;
     qs('#bn-mapel-badge').textContent = state.guru.mapel;
+    qs('#bn-nav-akun').classList.toggle('hidden', state.guru.role !== 'admin');
     renderSiswaPage();
     populateKelasDropdowns();
     // Setelah masuk, menu langsung diarahkan ke "Input Nilai" karena halaman
@@ -815,12 +882,13 @@
   });
   function switchPage(name){
     qsa('.bn-nav button').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-view') === name); });
-    ['siswa','nilai','rapot','peringkat'].forEach(function(p){
+    ['siswa','nilai','rapot','peringkat','akun'].forEach(function(p){
       qs('#bn-page-' + p).classList.toggle('hidden', p !== name);
     });
     if(name === 'nilai'){ updateNilaiDesc(); renderNilaiTable(); }
     if(name === 'rapot') renderRapotTable();
     if(name === 'peringkat') renderPeringkat();
+    if(name === 'akun') renderAkunPage();
   }
 
   function distinctKelas(){
@@ -1614,6 +1682,99 @@
 
       doc.save(filename);
       toast('Peringkat berhasil diekspor ke PDF.');
+    });
+  });
+
+  // ---------- AKUN PAGE (khusus admin) ----------
+  function roleBadge(role){
+    var label = role === 'admin' ? 'Admin' : 'Guru';
+    var cls = role === 'admin' ? 'gold' : 'outline';
+    return '<span class="bn-pill-btn ' + cls + '" style="pointer-events:none;padding:2px 10px;font-size:12px;">' + label + '</span>';
+  }
+
+  function renderAkunPage(){
+    var box = qs('#bn-akun-list');
+    if(!state.guruList.length){
+      box.innerHTML = '<div class="bn-empty">Belum ada akun.</div>';
+      return;
+    }
+    var list = state.guruList.slice().sort(function(a,b){ return (a.nama||'').localeCompare(b.nama||''); });
+    var html = '<table class="bn-table"><thead><tr><th>Nama</th><th>Mata pelajaran</th><th>Peran</th><th></th></tr></thead><tbody>';
+    list.forEach(function(g){
+      var isSelf = state.guru && g.id === state.guru.id;
+      html += '<tr><td>' + escapeHtml(g.nama) + (isSelf ? ' <span class="bn-mini">(akun Anda)</span>' : '') + '</td>' +
+        '<td>' + escapeHtml(g.mapel) + '</td>' +
+        '<td>' + roleBadge(g.role) + '</td>' +
+        '<td>' + (isSelf ? '' : '<button class="bn-pill-btn danger" data-del-akun="' + g.id + '">Hapus</button>') + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    box.innerHTML = html;
+    qsa('[data-del-akun]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-del-akun');
+        var g = state.guruList.filter(function(x){ return x.id === id; })[0];
+        var nama = g ? g.nama : id;
+        if(!window.confirm('Hapus akun "' + nama + '"? Tindakan ini tidak bisa dibatalkan.')) return;
+        btn.disabled = true;
+        fetch('/api/guru?id=' + encodeURIComponent(id), { method:'DELETE' }).then(function(r){
+          return r.json().then(function(d){ return {ok:r.ok, data:d}; });
+        }).then(function(res){
+          if(!res.ok){
+            toast(res.data && res.data.error ? res.data.error : 'Gagal menghapus akun.');
+            btn.disabled = false;
+            return;
+          }
+          state.guruList = state.guruList.filter(function(x){ return x.id !== id; });
+          refreshGuruDropdown();
+          renderAkunPage();
+          toast('Akun "' + nama + '" berhasil dihapus.');
+        }).catch(function(){
+          toast('Tidak dapat terhubung ke server.');
+          btn.disabled = false;
+        });
+      });
+    });
+  }
+
+  qs('#bn-akun-mapel').addEventListener('change', function(){
+    qs('#bn-akun-mapel-lain-wrap').classList.toggle('hidden', this.value !== '__lain__');
+  });
+
+  qs('#bn-form-akun').addEventListener('submit', function(e){
+    e.preventDefault();
+    var msg = qs('#bn-akun-msg');
+    msg.innerHTML = '';
+    var nama = qs('#bn-akun-nama').value.trim();
+    var mapelSel = qs('#bn-akun-mapel').value;
+    var mapel = mapelSel === '__lain__' ? qs('#bn-akun-mapel-lain').value.trim() : mapelSel;
+    var pass = qs('#bn-akun-pass').value;
+    var role = qs('#bn-akun-role').value;
+    if(!nama || !mapel){ msg.innerHTML = '<div class="bn-msg err">Nama dan mata pelajaran wajib diisi.</div>'; return; }
+    if(pass.length < 4){ msg.innerHTML = '<div class="bn-msg err">Kata sandi minimal 4 karakter.</div>'; return; }
+    var btn = qs('#bn-form-akun button[type=submit]');
+    btn.disabled = true;
+    fetch('/api/guru', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({nama:nama, mapel:mapel, password:pass, role:role})
+    }).then(function(r){
+      return r.json().then(function(d){ return {ok:r.ok, data:d}; });
+    }).then(function(res){
+      btn.disabled = false;
+      if(!res.ok){
+        msg.innerHTML = '<div class="bn-msg err">' + escapeHtml(res.data && res.data.error ? res.data.error : 'Gagal membuat akun.') + '</div>';
+        return;
+      }
+      state.guruList.push(res.data.guru);
+      refreshGuruDropdown();
+      renderAkunPage();
+      qs('#bn-form-akun').reset();
+      qs('#bn-akun-mapel-lain-wrap').classList.add('hidden');
+      msg.innerHTML = '<div class="bn-msg ok">Akun "' + escapeHtml(nama) + '" berhasil dibuat.</div>';
+      toast('Akun baru berhasil dibuat.');
+    }).catch(function(){
+      btn.disabled = false;
+      msg.innerHTML = '<div class="bn-msg err">Tidak dapat terhubung ke server. Periksa koneksi internet.</div>';
     });
   });
 
