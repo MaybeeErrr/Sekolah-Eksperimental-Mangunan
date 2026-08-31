@@ -17,6 +17,7 @@
     margin:0;
     padding:0;
     min-height:100%;
+    overflow-x:hidden;
     background:#F1EDE3;
   }
   :root{
@@ -239,14 +240,36 @@
 
   @media (max-width:760px){
     .bn-login-wrap{flex-direction:column;}
-    .bn-login-left{padding:28px 24px;}
+    .bn-login-left{padding:24px 20px;}
+    .bn-login-left h1{font-size:26px;}
+    .bn-login-right{padding:24px 16px;}
+    .bn-card{padding:22px 18px;}
     .bn-shell{flex-direction:column;}
-    .bn-sidebar{width:100%;flex-direction:row;align-items:center;padding:12px 14px;overflow-x:auto;}
-    .bn-side-top{border:none;margin:0;padding:0 12px 0 0;}
-    .bn-nav{flex-direction:row;}
-    .bn-logout{margin-left:auto;}
-    .bn-main{padding:18px;}
+    .bn-sidebar{width:100%;flex-direction:row;align-items:center;padding:10px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+    .bn-side-top{border:none;margin:0;padding:0 10px 0 0;flex:none;white-space:nowrap;}
+    .bn-nav{flex-direction:row;flex:none;}
+    .bn-nav button{flex:none;white-space:nowrap;}
+    .bn-logout{margin-left:auto;flex:none;white-space:nowrap;}
+    .bn-main{padding:14px;}
+    .bn-panel{padding:16px 14px;}
+    .bn-panel-head{align-items:flex-start;}
+    .bn-panel-head h2{font-size:16.5px;}
+    .bn-row{gap:10px;}
+    .bn-row .bn-field{min-width:0;flex:1 1 100%;}
     .bn-stats{flex-direction:column;}
+
+    /* Tabel data (siswa, input nilai, peringkat, rekap) digeser ke samping
+       di dalam kotaknya sendiri, bukan melebarkan seluruh halaman. */
+    #bn-siswa-list, #bn-nilai-body, #bn-peringkat-body, #bn-rapot-table,
+    .bn-kelas-body, #bn-import-preview{
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    table.bn-table{font-size:12px;}
+    table.bn-table th, table.bn-table td{padding:6px 8px;white-space:nowrap;}
+    table.bn-table input[type=number]{width:52px;padding:4px 5px;}
+    .bn-actions{gap:6px;}
+    .bn-pill-btn, .bn-btn.sm{padding:7px 11px;font-size:12px;}
   }
 </style>
 
