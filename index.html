@@ -557,7 +557,7 @@
               </div>
               <div class="bn-row" style="margin-bottom:0;">
                 <div class="bn-field" style="min-width:200px;">
-                  <label for="bn-peringkat-cakupan">Cakupan ekspor</label>
+                  <label for="bn-peringkat-cakupan">Cakupan tampilan &amp; ekspor</label>
                   <select id="bn-peringkat-cakupan"></select>
                 </div>
                 <div class="bn-actions" style="align-self:flex-end;">
@@ -592,7 +592,8 @@
     kelasSiswaFilter: '',
     kelasNilai: '',
     kelasRapot: '',
-    nilaiCache: {}
+    nilaiCache: {},
+    peringkatLoaded: false
   };
 
   // ---------- storage helpers ----------
@@ -1385,25 +1386,48 @@
   function renderPeringkat(){
     var body = qs('#bn-peringkat-body');
     body.innerHTML = '<div class="bn-empty">Menyusun peringkat\u2026</div>';
+    var cakupan = qs('#bn-peringkat-cakupan').value;
     computeSemuaNilai().then(function(all){
       if(all.length === 0){
         body.innerHTML = '<div class="bn-empty">Belum ada nilai yang dapat digunakan untuk menyusun peringkat.</div>';
         return;
       }
       var rk = buildRanking(all);
-      var html = '<h3 style="font-size:15px;color:var(--green-dark);margin-bottom:10px;">Peringkat keseluruhan sekolah</h3>';
-      html += rankRowsHtml(rk.overall);
-      html += '<h3 style="font-size:15px;color:var(--green-dark);margin:20px 0 10px 0;">Peringkat per kelas</h3>';
-      rk.kelasKeys.forEach(function(kelas){
-        var top10 = rk.perKelas[kelas];
-        html += '<details class="bn-kelas-group"><summary>Kelas ' + escapeHtml(kelas) + ' &middot; ' + top10.length + ' siswa</summary>' +
-          '<div class="bn-kelas-body">' + rankRowsHtml(top10) + '</div></details>';
-      });
+      state.peringkatLoaded = true;
+      var html = '';
+
+      if(cakupan === '__semua__'){
+        if(rk.kelasKeys.length === 0){
+          html = '<div class="bn-empty">Belum ada nilai kelas untuk ditampilkan.</div>';
+        }else{
+          rk.kelasKeys.forEach(function(kelas){
+            var top10 = rk.perKelas[kelas];
+            html += '<details class="bn-kelas-group" open><summary>Kelas ' + escapeHtml(kelas) + ' &middot; ' + top10.length + ' siswa</summary>' +
+              '<div class="bn-kelas-body">' + rankRowsHtml(top10) + '</div></details>';
+          });
+        }
+      }else if(cakupan){
+        var rowsKelas = rk.perKelas[cakupan] || [];
+        html += '<h3 style="font-size:15px;color:var(--green-dark);margin-bottom:10px;">Peringkat Kelas ' + escapeHtml(cakupan) + '</h3>';
+        if(rowsKelas.length === 0){
+          html += '<div class="bn-empty">Belum ada nilai untuk Kelas ' + escapeHtml(cakupan) + '.</div>';
+        }else{
+          html += rankRowsHtml(rowsKelas);
+        }
+      }else{
+        html += '<h3 style="font-size:15px;color:var(--green-dark);margin-bottom:10px;">Peringkat keseluruhan sekolah</h3>';
+        html += rankRowsHtml(rk.overall);
+      }
+
       body.innerHTML = html;
     });
   }
 
   qs('#bn-muat-peringkat').addEventListener('click', renderPeringkat);
+  qs('#bn-peringkat-cakupan').addEventListener('change', function(){
+    if(state.peringkatLoaded) renderPeringkat();
+  });
+
 
   function safeSheetName(s){
     var cleaned = String(s).replace(/[:\\\/\?\*\[\]]/g, '-').trim();
