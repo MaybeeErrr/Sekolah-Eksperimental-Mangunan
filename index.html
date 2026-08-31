@@ -507,6 +507,16 @@
                 <div class="bn-field"><label>Kota (baris tanggal rapor)</label><input id="bn-set-kota" type="text" placeholder="Contoh: Yogyakarta"></div>
               </div>
               <div class="bn-mini" style="margin:-4px 0 14px 0;">Tanggal pada rapor terisi otomatis sesuai tanggal hari ini saat diunduh.</div>
+
+              <h3 style="font-size:15px;color:var(--green-dark);margin:4px 0 10px 0;">Bobot nilai akhir</h3>
+              <div class="desc" style="margin-bottom:12px;">Atur persentase Harian, UTS, dan UAS yang membentuk Nilai Akhir. Total ketiganya harus 100%.</div>
+              <div class="bn-row">
+                <div class="bn-field" style="max-width:140px;"><label>Harian (%)</label><input id="bn-set-bobot-harian" type="number" min="0" max="100"></div>
+                <div class="bn-field" style="max-width:140px;"><label>UTS (%)</label><input id="bn-set-bobot-uts" type="number" min="0" max="100"></div>
+                <div class="bn-field" style="max-width:140px;"><label>UAS (%)</label><input id="bn-set-bobot-uas" type="number" min="0" max="100"></div>
+                <div class="bn-mini" id="bn-bobot-total" style="align-self:center;"></div>
+              </div>
+
               <button class="bn-pill-btn outline" id="bn-simpan-setting">Simpan pengaturan</button>
             </div>
 
@@ -588,7 +598,7 @@
     guru: null,        // current logged-in {id, nama, mapel, mapelSlug}
     guruList: [],
     siswa: [],
-    settings: {namaSekolah:'SD Eksperimental Mangunan', kepsek:'', kota:'', tahunAjaran:'2026/2027', semester:'Ganjil'},
+    settings: {namaSekolah:'SD Eksperimental Mangunan', kepsek:'', kota:'', tahunAjaran:'2026/2027', semester:'Ganjil', bobot:{harian:30, uts:30, uas:40}},
     kelasSiswaFilter: '',
     kelasNilai: '',
     kelasRapot: '',
@@ -802,7 +812,7 @@
     ['siswa','nilai','rapot','peringkat'].forEach(function(p){
       qs('#bn-page-' + p).classList.toggle('hidden', p !== name);
     });
-    if(name === 'nilai') renderNilaiTable();
+    if(name === 'nilai'){ updateNilaiDesc(); renderNilaiTable(); }
     if(name === 'rapot') renderRapotTable();
     if(name === 'peringkat') renderPeringkat();
   }
@@ -1021,11 +1031,22 @@
     });
   }
 
+  function currentBobot(){
+    var b = (state.settings && state.settings.bobot) || {harian:30, uts:30, uas:40};
+    return {harian: Number(b.harian) || 0, uts: Number(b.uts) || 0, uas: Number(b.uas) || 0};
+  }
   function nilaiAkhir(tugas, uts, uas){
     var t = parseFloat(tugas), u = parseFloat(uts), a = parseFloat(uas);
     if(isNaN(t) && isNaN(u) && isNaN(a)) return null;
     t = isNaN(t)?0:t; u = isNaN(u)?0:u; a = isNaN(a)?0:a;
-    return Math.round(t*0.3 + u*0.3 + a*0.4);
+    var b = currentBobot();
+    return Math.round(t*(b.harian/100) + u*(b.uts/100) + a*(b.uas/100));
+  }
+  function updateNilaiDesc(){
+    var el = qs('#bn-page-nilai .desc');
+    if(!el) return;
+    var b = currentBobot();
+    el.textContent = 'Nilai Akhir dihitung otomatis: ' + b.harian + '% Harian, ' + b.uts + '% UTS, ' + b.uas + '% UAS.';
   }
   function predikatFor(nilai){
     if(nilai === null) return '';
@@ -1077,15 +1098,46 @@
 
   // ---------- RAPOT PAGE ----------
   qs('#bn-set-sekolah').value = state.settings.namaSekolah;
+  function fillBobotFields(){
+    var b = currentBobot();
+    qs('#bn-set-bobot-harian').value = b.harian;
+    qs('#bn-set-bobot-uts').value = b.uts;
+    qs('#bn-set-bobot-uas').value = b.uas;
+    updateBobotTotal();
+  }
+  function updateBobotTotal(){
+    var h = Number(qs('#bn-set-bobot-harian').value) || 0;
+    var u = Number(qs('#bn-set-bobot-uts').value) || 0;
+    var a = Number(qs('#bn-set-bobot-uas').value) || 0;
+    var total = h + u + a;
+    var el = qs('#bn-bobot-total');
+    el.textContent = 'Total: ' + total + '%';
+    el.style.color = total === 100 ? 'var(--ok)' : 'var(--red)';
+  }
+  qsa('#bn-set-bobot-harian, #bn-set-bobot-uts, #bn-set-bobot-uas').forEach(function(inp){
+    inp.addEventListener('input', updateBobotTotal);
+  });
   qs('#bn-simpan-setting').addEventListener('click', function(){
+    var h = Number(qs('#bn-set-bobot-harian').value);
+    var u = Number(qs('#bn-set-bobot-uts').value);
+    var a = Number(qs('#bn-set-bobot-uas').value);
+    if(isNaN(h) || isNaN(u) || isNaN(a) || h < 0 || u < 0 || a < 0 || (h + u + a) !== 100){
+      toast('Total bobot Harian + UTS + UAS harus tepat 100%.');
+      return;
+    }
     state.settings = {
       namaSekolah: qs('#bn-set-sekolah').value.trim() || 'Sekolah Dasar',
       kepsek: qs('#bn-set-kepsek').value.trim(),
       kota: qs('#bn-set-kota').value.trim(),
       tahunAjaran: qs('#bn-set-tahun').value.trim() || '-',
-      semester: qs('#bn-set-semester').value
+      semester: qs('#bn-set-semester').value,
+      bobot: {harian:h, uts:u, uas:a}
     };
-    sSet('bn-settings', state.settings, true).then(function(){ toast('Pengaturan rapor disimpan.'); });
+    sSet('bn-settings', state.settings, true).then(function(){
+      toast('Pengaturan rapor disimpan.');
+      updateNilaiDesc();
+      renderNilaiTable();
+    });
   });
 
   function generateCatatan(nama, siswaId, mapelColumns){
@@ -1589,6 +1641,8 @@
     qs('#bn-set-kota').value = state.settings.kota || '';
     qs('#bn-set-tahun').value = state.settings.tahunAjaran || '';
     qs('#bn-set-semester').value = state.settings.semester || 'Ganjil';
+    fillBobotFields();
+    updateNilaiDesc();
     if(sesiAktif){
       state.guru = sesiAktif;
       enterDashboard();
