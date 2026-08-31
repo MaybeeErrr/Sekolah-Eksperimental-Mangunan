@@ -1233,7 +1233,7 @@
     var body = mapelColumns.map(function(m, idx){
       var v = m.data[siswa.id];
       var nilai = v && v.akhir !== null && v.akhir !== undefined ? v.akhir : '-';
-      var pred = v && v.predikat ? (v.predikat + ' \u2014 ' + predikatLabel[v.predikat]) : '-';
+      var pred = v && v.predikat ? v.predikat : '-';
       return [String(idx+1), m.label, String(nilai), pred];
     });
     doc.autoTable({
@@ -1243,7 +1243,7 @@
       theme: 'grid',
       styles: {font:'helvetica', fontSize:9.5, cellPadding:2.4, textColor:[32,38,31]},
       headStyles: {fillColor:[43,74,62], textColor:[247,244,231], fontStyle:'bold'},
-      columnStyles: {0:{cellWidth:10, halign:'center'}, 2:{cellWidth:20, halign:'center'}, 3:{cellWidth:42}},
+      columnStyles: {0:{cellWidth:10, halign:'center'}, 2:{cellWidth:20, halign:'center'}, 3:{cellWidth:20, halign:'center'}},
       margin: {left: marginX, right: marginX}
     });
     var afterY = doc.lastAutoTable.finalY + 10;
