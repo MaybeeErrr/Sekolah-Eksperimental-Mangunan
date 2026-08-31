@@ -1,0 +1,10 @@
+{
+  "name": "buku-nilai-sd",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Aplikasi Buku Nilai SD - login per guru mata pelajaran, disimpan di Neon Postgres, dideploy di Vercel.",
+  "dependencies": {
+    "@neondatabase/serverless": "^0.9.5",
+    "bcryptjs": "^2.4.3"
+  }
+}

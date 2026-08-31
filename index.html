@@ -1,0 +1,1491 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buku Nilai SD</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+<style>
+  :root{
+    --paper:#F1EDE3;
+    --paper-deep:#E7E0CF;
+    --line:#DCD3BB;
+    --ink:#20261F;
+    --ink-soft:#5B6153;
+    --green:#2B4A3E;
+    --green-dark:#1B2F27;
+    --green-mid:#3D6455;
+    --gold:#D9A441;
+    --gold-dark:#B0801E;
+    --white:#FFFFFF;
+    --red:#AF4632;
+    --ok:#3F7A5D;
+    --radius:6px;
+  }
+  *{box-sizing:border-box;}
+  #buku-nilai-app{
+    font-family:'IBM Plex Sans',sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    min-height:600px;
+    line-height:1.45;
+    font-size:14px;
+  }
+  #buku-nilai-app h1,#buku-nilai-app h2,#buku-nilai-app h3{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  #buku-nilai-app .num{font-family:'IBM Plex Mono',monospace;}
+  #buku-nilai-app .hidden{display:none !important;}
+  #buku-nilai-app button{font-family:inherit;cursor:pointer;border:none;}
+  #buku-nilai-app input,#buku-nilai-app select{font-family:inherit;font-size:14px;}
+  #buku-nilai-app a{color:inherit;}
+
+  /* ---------- LOGIN ---------- */
+  .bn-login-wrap{display:flex;min-height:600px;}
+  .bn-login-left{
+    flex:1 1 42%;
+    background:linear-gradient(165deg,var(--green) 0%,var(--green-dark) 100%);
+    color:#EFE9D8;
+    padding:48px 40px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    position:relative;overflow:hidden;
+  }
+  .bn-login-left::after{
+    content:"";position:absolute;right:-60px;bottom:-60px;width:220px;height:220px;
+    border-radius:50%;border:1px dashed rgba(239,233,216,0.25);
+  }
+  .bn-login-left::before{
+    content:"";position:absolute;right:20px;top:60px;width:120px;height:120px;
+    border-radius:50%;border:1px dashed rgba(239,233,216,0.18);
+  }
+  .bn-brand-mark{
+    width:38px;height:38px;border:2px solid var(--gold);border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Fraunces',serif;font-weight:600;color:var(--gold);font-size:16px;
+  }
+  .bn-login-left h1{font-size:34px;color:#FBF8EF;margin-top:22px;line-height:1.15;}
+  .bn-login-left p{max-width:340px;color:#C9CFC2;margin-top:14px;font-size:14.5px;}
+  .bn-login-quote{font-size:12.5px;color:#9FAC9B;border-top:1px solid rgba(239,233,216,0.18);padding-top:16px;position:relative;z-index:1;}
+  .bn-login-right{
+    flex:1 1 58%;background:var(--paper);
+    display:flex;align-items:center;justify-content:center;padding:40px 24px;
+  }
+  .bn-card{
+    width:100%;max-width:380px;background:var(--white);
+    border:1px solid var(--line);border-radius:var(--radius);
+    padding:30px 28px;
+  }
+  .bn-tabs{display:flex;gap:4px;margin-bottom:22px;background:var(--paper-deep);padding:3px;border-radius:var(--radius);}
+  .bn-tab{flex:1;padding:8px 0;text-align:center;font-size:13px;font-weight:500;color:var(--ink-soft);background:transparent;border-radius:4px;}
+  .bn-tab.active{background:var(--white);color:var(--green);box-shadow:0 1px 2px rgba(0,0,0,0.06);}
+  .bn-field{margin-bottom:14px;}
+  .bn-field label{display:block;font-size:12.5px;color:var(--ink-soft);margin-bottom:5px;}
+  .bn-field input,.bn-field select{
+    width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:#FCFAF4;
+  }
+  .bn-field input:focus,.bn-field select:focus{outline:2px solid var(--green-mid);outline-offset:1px;}
+  .bn-btn{
+    width:100%;padding:10px 0;border-radius:4px;background:var(--green);color:#F4F1E4;
+    font-weight:500;font-size:14px;transition:background .15s;
+  }
+  .bn-btn:hover{background:var(--green-dark);}
+  .bn-btn.gold{background:var(--gold);color:#31260B;}
+  .bn-btn.gold:hover{background:var(--gold-dark);}
+  .bn-btn.ghost{background:transparent;color:var(--green);border:1px solid var(--line);}
+  .bn-msg{font-size:12.5px;margin-top:10px;padding:8px 10px;border-radius:4px;}
+  .bn-msg.err{background:#F6E6E1;color:var(--red);}
+  .bn-msg.ok{background:#E3EEE6;color:var(--ok);}
+  .bn-hint{font-size:12px;color:var(--ink-soft);margin-top:14px;line-height:1.5;}
+
+  /* ---------- DASHBOARD ---------- */
+  .bn-shell{display:flex;min-height:600px;}
+  .bn-sidebar{
+    width:216px;flex:none;background:var(--green);color:#E7E9DC;
+    display:flex;flex-direction:column;padding:22px 14px;
+  }
+  .bn-side-top{padding:0 8px 20px 8px;border-bottom:1px solid rgba(231,233,220,0.15);margin-bottom:16px;}
+  .bn-side-top .who{font-size:13px;font-weight:600;color:#F7F4E7;}
+  .bn-side-top .mapel-badge{
+    display:inline-block;margin-top:6px;font-size:11px;background:var(--gold);color:#31260B;
+    padding:3px 8px;border-radius:999px;font-weight:500;
+  }
+  .bn-nav{display:flex;flex-direction:column;gap:2px;flex:1;}
+  .bn-nav button{
+    text-align:left;padding:10px 12px;border-radius:4px;background:transparent;color:#D8DBC9;
+    font-size:13.5px;display:flex;align-items:center;gap:9px;
+  }
+  .bn-nav button .dot{width:6px;height:6px;border-radius:50%;background:currentColor;opacity:0.4;flex:none;}
+  .bn-nav button:hover{background:rgba(255,255,255,0.06);}
+  .bn-nav button.active{background:var(--green-dark);color:#F7F4E7;}
+  .bn-nav button.active .dot{background:var(--gold);opacity:1;}
+  .bn-logout{padding:10px 12px;border-radius:4px;color:#C9AFA6;font-size:13px;text-align:left;}
+  .bn-logout:hover{background:rgba(255,255,255,0.06);}
+
+  .bn-main{flex:1;padding:26px 32px;overflow:auto;background:
+    repeating-linear-gradient(var(--paper),var(--paper) 27px,var(--line) 28px);
+    background-attachment:local;
+  }
+  .bn-main-inner{background:transparent;}
+  .bn-panel{
+    background:var(--white);border:1px solid var(--line);border-radius:var(--radius);
+    padding:22px 24px;margin-bottom:18px;
+  }
+  .bn-panel-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+  .bn-panel-head h2{font-size:19px;color:var(--green-dark);}
+  .bn-panel-head .desc{font-size:12.5px;color:var(--ink-soft);margin-top:3px;}
+
+  .bn-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px;}
+  .bn-row .bn-field{margin-bottom:0;min-width:180px;flex:1;}
+
+  table.bn-table{width:100%;border-collapse:collapse;font-size:13px;}
+  table.bn-table th{
+    text-align:left;font-weight:600;color:var(--ink-soft);font-size:11.5px;
+    text-transform:none;padding:8px 10px;border-bottom:1.5px solid var(--green);background:var(--paper-deep);
+  }
+  table.bn-table td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table.bn-table tr:hover td{background:#FBF9F1;}
+  table.bn-table input[type=number]{
+    width:64px;padding:5px 6px;border:1px solid var(--line);border-radius:4px;text-align:right;font-family:'IBM Plex Mono',monospace;
+  }
+  .bn-empty{
+    text-align:center;padding:34px 20px;color:var(--ink-soft);border:1px dashed var(--line);border-radius:var(--radius);
+    font-size:13px;
+  }
+  .bn-empty b{color:var(--ink);}
+  .bn-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .bn-btn.sm{width:auto;padding:8px 14px;font-size:12.5px;}
+  .bn-pill-btn{padding:6px 12px;font-size:12px;border-radius:4px;background:var(--green);color:#F4F1E4;}
+  .bn-pill-btn.outline{background:transparent;border:1px solid var(--line);color:var(--green-dark);}
+  .bn-pill-btn.danger{background:transparent;color:var(--red);}
+  .bn-pill-btn.danger:hover{background:#F6E6E1;}
+  .bn-toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+    background:var(--green-dark);color:#F4F1E4;padding:10px 18px;border-radius:5px;font-size:13px;
+    box-shadow:0 4px 14px rgba(0,0,0,0.18);z-index:50;
+  }
+  .bn-predikat{font-size:11px;padding:2px 7px;border-radius:999px;font-weight:500;}
+  .bn-predikat.A{background:#E3EEE6;color:var(--ok);}
+  .bn-predikat.B{background:#EAF0E0;color:#5C7A3B;}
+  .bn-predikat.C{background:#F6EFE1;color:var(--gold-dark);}
+  .bn-predikat.D{background:#F6E6E1;color:var(--red);}
+  .bn-file-drop{
+    border:1.5px dashed var(--line);border-radius:var(--radius);padding:20px;text-align:center;
+    color:var(--ink-soft);font-size:12.5px;background:#FBF9F1;
+  }
+  .bn-file-drop b{color:var(--green-dark);}
+  .bn-mini{font-size:11.5px;color:var(--ink-soft);}
+  @keyframes bn-page-in{
+    from{opacity:0;transform:translateY(7px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  .bn-page:not(.hidden){animation:bn-page-in .35s ease;}
+
+  /* ---------- STAT CARDS ---------- */
+  .bn-stats{display:flex;gap:14px;margin-bottom:18px;flex-wrap:wrap;}
+  .bn-stat{
+    flex:1;min-width:150px;background:var(--white);border:1px solid var(--line);
+    border-radius:var(--radius);padding:15px 18px;position:relative;overflow:hidden;
+  }
+  .bn-stat::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--gold);}
+  .bn-stat .n{font-family:'Fraunces',serif;font-size:27px;font-weight:600;color:var(--green-dark);line-height:1;}
+  .bn-stat .l{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
+
+  /* ---------- PERINGKAT ---------- */
+  .bn-rank{
+    display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;flex:none;
+    border-radius:50%;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;
+    background:var(--paper-deep);color:var(--ink-soft);
+  }
+  .bn-rank.rank-1{background:var(--gold);color:#31260B;}
+  .bn-rank.rank-2{background:#D9D2BE;color:var(--green-dark);}
+  .bn-rank.rank-3{background:#E3C9A0;color:#5B3A16;}
+  details.bn-kelas-group{border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;}
+  details.bn-kelas-group summary{
+    list-style:none;cursor:pointer;padding:11px 16px;background:var(--paper-deep);
+    font-family:'Fraunces',serif;font-weight:600;font-size:14.5px;color:var(--green-dark);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  details.bn-kelas-group summary::-webkit-details-marker{display:none;}
+  details.bn-kelas-group summary::after{content:"\2304";font-family:'IBM Plex Sans',sans-serif;font-weight:400;color:var(--ink-soft);transition:transform .15s;}
+  details.bn-kelas-group[open] summary::after{transform:rotate(180deg);}
+  details.bn-kelas-group .bn-kelas-body{padding:4px 16px 14px 16px;}
+
+  /* ---------- CATATAN WALI KELAS ---------- */
+  .bn-catatan-item{border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;background:#FCFAF4;}
+  .bn-catatan-item .nm{font-weight:600;font-size:13px;color:var(--green-dark);margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+  .bn-catatan-item textarea{
+    width:100%;min-height:56px;padding:8px 10px;border:1px solid var(--line);border-radius:4px;
+    background:var(--white);font-family:inherit;font-size:12.5px;line-height:1.5;resize:vertical;
+  }
+  .bn-catatan-item textarea:focus{outline:2px solid var(--green-mid);outline-offset:1px;}
+  .bn-link-btn{background:transparent;color:var(--green-mid);font-size:11.5px;text-decoration:underline;padding:0;flex:none;}
+  .bn-link-btn:hover{color:var(--green-dark);}
+
+  @media (max-width:760px){
+    .bn-login-wrap{flex-direction:column;}
+    .bn-login-left{padding:28px 24px;}
+    .bn-shell{flex-direction:column;}
+    .bn-sidebar{width:100%;flex-direction:row;align-items:center;padding:12px 14px;overflow-x:auto;}
+    .bn-side-top{border:none;margin:0;padding:0 12px 0 0;}
+    .bn-nav{flex-direction:row;}
+    .bn-logout{margin-left:auto;}
+    .bn-main{padding:18px;}
+    .bn-stats{flex-direction:column;}
+  }
+</style>
+
+<div id="buku-nilai-app">
+  <div id="bn-diag" class="hidden" style="background:#F6E6E1;color:#8A3A28;font-size:12px;padding:8px 14px;border-bottom:1px solid #E3C4B8;"></div>
+
+  <!-- ================= LOGIN VIEW ================= -->
+  <section id="bn-view-login" class="screen">
+    <div class="bn-login-wrap">
+      <div class="bn-login-left">
+        <div>
+          <div class="bn-brand-mark">BN</div>
+          <h1>Buku Nilai</h1>
+          <p>Satu tempat bagi setiap guru mata pelajaran untuk mencatat nilai siswa &mdash; dan bagi wali kelas untuk menyusun rapor, sekali klik per siswa.</p>
+        </div>
+        <div class="bn-login-quote">Untuk jenjang Sekolah Dasar &middot; data tersimpan otomatis di perangkat ini</div>
+      </div>
+      <div class="bn-login-right">
+        <div class="bn-card">
+          <div class="bn-tabs">
+            <button class="bn-tab active" id="bn-tab-masuk">Masuk</button>
+            <button class="bn-tab" id="bn-tab-daftar">Daftar Guru Baru</button>
+          </div>
+
+          <!-- MASUK -->
+          <form id="bn-form-masuk">
+            <div class="bn-field">
+              <label for="bn-login-guru">Nama guru &amp; mata pelajaran</label>
+              <select id="bn-login-guru"></select>
+            </div>
+            <div class="bn-field">
+              <label for="bn-login-pass">Kata sandi</label>
+              <input type="password" id="bn-login-pass" placeholder="Kata sandi" autocomplete="current-password">
+            </div>
+            <button type="submit" class="bn-btn">Masuk</button>
+            <div id="bn-login-msg"></div>
+          </form>
+
+          <!-- DAFTAR -->
+          <form id="bn-form-daftar" class="hidden">
+            <div class="bn-field">
+              <label for="bn-daftar-nama">Nama guru</label>
+              <input type="text" id="bn-daftar-nama" placeholder="Contoh: Ibu Sri Wahyuni">
+            </div>
+            <div class="bn-field">
+              <label for="bn-daftar-mapel">Mata pelajaran yang diampu</label>
+              <select id="bn-daftar-mapel">
+                <option value="">Pilih mata pelajaran</option>
+                <option>Pendidikan Agama dan Budi Pekerti</option>
+                <option>Pendidikan Pancasila</option>
+                <option>Bahasa Indonesia</option>
+                <option>Matematika</option>
+                <option>IPAS (Ilmu Pengetahuan Alam dan Sosial)</option>
+                <option>PJOK</option>
+                <option>Seni Budaya</option>
+                <option>Bahasa Inggris</option>
+                <option>Muatan Lokal</option>
+                <option value="__lain__">Lainnya&hellip;</option>
+              </select>
+            </div>
+            <div class="bn-field hidden" id="bn-daftar-mapel-lain-wrap">
+              <label for="bn-daftar-mapel-lain">Nama mata pelajaran</label>
+              <input type="text" id="bn-daftar-mapel-lain" placeholder="Tulis nama mata pelajaran">
+            </div>
+            <div class="bn-field">
+              <label for="bn-daftar-pass">Buat kata sandi</label>
+              <input type="password" id="bn-daftar-pass" placeholder="Minimal 4 karakter">
+            </div>
+            <button type="submit" class="bn-btn gold">Daftar &amp; masuk</button>
+            <div id="bn-daftar-msg"></div>
+            <div class="bn-hint">Satu guru bisa mendaftar lebih dari satu kali jika mengampu beberapa mata pelajaran.</div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= DASHBOARD VIEW ================= -->
+  <section id="bn-view-dashboard" class="screen hidden">
+    <div class="bn-shell">
+      <aside class="bn-sidebar">
+        <div class="bn-side-top">
+          <div class="who" id="bn-who">&nbsp;</div>
+          <span class="mapel-badge" id="bn-mapel-badge">&nbsp;</span>
+        </div>
+        <nav class="bn-nav">
+          <button data-view="siswa" class="active"><span class="dot"></span>Kelola Siswa</button>
+          <button data-view="nilai"><span class="dot"></span>Input Nilai</button>
+          <button data-view="peringkat"><span class="dot"></span>Peringkat</button>
+          <button data-view="rapot"><span class="dot"></span>Rekap &amp; Rapor</button>
+        </nav>
+        <button class="bn-logout" id="bn-logout">Keluar</button>
+      </aside>
+
+      <main class="bn-main">
+        <div class="bn-main-inner">
+
+          <!-- SISWA -->
+          <div class="bn-page" id="bn-page-siswa">
+            <div class="bn-stats" id="bn-stats"></div>
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Impor data siswa</h2>
+                  <div class="desc">Berkas Excel (.xlsx/.xls) atau CSV dengan kolom NISN, Nama, dan Kelas.</div>
+                </div>
+              </div>
+              <label class="bn-file-drop" style="display:block;cursor:pointer;">
+                <input type="file" id="bn-file-siswa" accept=".xlsx,.xls,.csv" class="hidden">
+                <b>Klik untuk pilih berkas</b> &mdash; atau seret ke sini<br>
+                <span class="bn-mini">Kolom yang dikenali: nisn/nis, nama, kelas (urutan bebas)</span>
+              </label>
+              <div id="bn-import-preview"></div>
+            </div>
+
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Daftar siswa</h2>
+                  <div class="desc">Data ini digunakan bersama oleh semua guru mata pelajaran.</div>
+                </div>
+                <div class="bn-row" style="margin-bottom:0;">
+                  <div class="bn-field" style="min-width:140px;">
+                    <select id="bn-siswa-filter-kelas"></select>
+                  </div>
+                </div>
+              </div>
+              <div id="bn-siswa-list"></div>
+            </div>
+          </div>
+
+          <!-- NILAI -->
+          <div class="bn-page hidden" id="bn-page-nilai">
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Input nilai</h2>
+                  <div class="desc">Nilai Akhir dihitung otomatis: 30% Harian, 30% UTS, 40% UAS.</div>
+                </div>
+                <div class="bn-row" style="margin-bottom:0;">
+                  <div class="bn-field" style="min-width:160px;">
+                    <select id="bn-nilai-kelas"></select>
+                  </div>
+                </div>
+              </div>
+              <div id="bn-nilai-body"></div>
+              <div class="bn-actions" style="margin-top:14px;">
+                <button class="bn-btn sm" id="bn-simpan-nilai">Simpan nilai</button>
+                <span class="bn-mini" id="bn-nilai-status" style="align-self:center;"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- RAPOT -->
+          <div class="bn-page hidden" id="bn-page-rapot">
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Pengaturan rapor</h2>
+                  <div class="desc">Digunakan sebagai kop dan identitas pada berkas rapor.</div>
+                </div>
+              </div>
+              <div class="bn-row">
+                <div class="bn-field"><label>Nama sekolah</label><input id="bn-set-sekolah" type="text"></div>
+                <div class="bn-field"><label>Kepala sekolah</label><input id="bn-set-kepsek" type="text"></div>
+              </div>
+              <div class="bn-row">
+                <div class="bn-field"><label>Tahun ajaran</label><input id="bn-set-tahun" type="text" placeholder="2026/2027"></div>
+                <div class="bn-field">
+                  <label>Semester</label>
+                  <select id="bn-set-semester"><option>Ganjil</option><option>Genap</option></select>
+                </div>
+              </div>
+              <div class="bn-row">
+                <div class="bn-field"><label>Kota (baris tanggal rapor)</label><input id="bn-set-kota" type="text" placeholder="Contoh: Yogyakarta"></div>
+              </div>
+              <div class="bn-mini" style="margin:-4px 0 14px 0;">Tanggal pada rapor terisi otomatis sesuai tanggal hari ini saat diunduh.</div>
+              <button class="bn-pill-btn outline" id="bn-simpan-setting">Simpan pengaturan</button>
+            </div>
+
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Rekap nilai per kelas</h2>
+                  <div class="desc">Diambil dari nilai yang disimpan setiap guru mata pelajaran.</div>
+                </div>
+                <div class="bn-row" style="margin-bottom:0;">
+                  <div class="bn-field" style="min-width:160px;">
+                    <select id="bn-rapot-kelas"></select>
+                  </div>
+                </div>
+              </div>
+              <div class="bn-row">
+                <div class="bn-field"><label>Wali kelas</label><input id="bn-rapot-wali" type="text" placeholder="Nama wali kelas"></div>
+              </div>
+              <div class="bn-actions" style="margin-bottom:14px;">
+                <button class="bn-pill-btn" id="bn-unduh-zip">Unduh semua rapor (ZIP)</button>
+              </div>
+              <div id="bn-rapot-table"></div>
+            </div>
+
+            <div class="bn-panel hidden" id="bn-panel-catatan">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Catatan wali kelas</h2>
+                  <div class="desc">Tersusun otomatis dari nilai setiap siswa. Sunting seperlunya &mdash; catatan ini yang tercetak pada rapor.</div>
+                </div>
+              </div>
+              <div id="bn-catatan-list"></div>
+              <div class="bn-actions" style="margin-top:4px;">
+                <button class="bn-btn sm" id="bn-simpan-catatan">Simpan semua catatan</button>
+                <span class="bn-mini" id="bn-catatan-status" style="align-self:center;"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PERINGKAT -->
+          <div class="bn-page hidden" id="bn-page-peringkat">
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Peringkat nilai</h2>
+                  <div class="desc">10 rata-rata nilai akhir terbaik, dihitung dari seluruh mata pelajaran yang sudah diinput.</div>
+                </div>
+              </div>
+              <div class="bn-row" style="margin-bottom:0;">
+                <div class="bn-field" style="min-width:200px;">
+                  <label for="bn-peringkat-cakupan">Cakupan ekspor</label>
+                  <select id="bn-peringkat-cakupan"></select>
+                </div>
+                <div class="bn-actions" style="align-self:flex-end;">
+                  <button class="bn-pill-btn outline" id="bn-muat-peringkat">Perbarui peringkat</button>
+                  <button class="bn-pill-btn outline" id="bn-ekspor-peringkat-excel">Unduh Excel</button>
+                  <button class="bn-pill-btn outline" id="bn-ekspor-peringkat-pdf">Unduh PDF</button>
+                </div>
+              </div>
+              <div id="bn-peringkat-body"><div class="bn-empty">Klik <b>Perbarui peringkat</b> untuk menyusun papan peringkat terbaru.</div></div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var root = document.getElementById('buku-nilai-app');
+  var qs = function(sel){ return root.querySelector(sel); };
+  var qsa = function(sel){ return Array.prototype.slice.call(root.querySelectorAll(sel)); };
+
+  var state = {
+    guru: null,        // current logged-in {id, nama, mapel, mapelSlug}
+    guruList: [],
+    siswa: [],
+    settings: {namaSekolah:'SD Eksperimental Mangunan', kepsek:'', kota:'', tahunAjaran:'2026/2027', semester:'Ganjil'},
+    kelasSiswaFilter: '',
+    kelasNilai: '',
+    kelasRapot: '',
+    nilaiCache: {}
+  };
+
+  // ---------- storage helpers ----------
+  // Data "shared" (dipakai bersama semua guru: siswa, nilai, pengaturan,
+  // catatan) disimpan di Neon Postgres lewat /api/kv & /api/kv/list.
+  // Data "private" (hanya kenyamanan browser ini, mis. guru terakhir login)
+  // tetap memakai localStorage perangkat, tidak perlu ke server.
+  function lsKey(key){ return 'bn_local__' + key; }
+
+  function sGet(key, shared){
+    shared = shared !== false;
+    if(!shared){
+      try{
+        var raw = window.localStorage.getItem(lsKey(key));
+        return Promise.resolve(raw !== null ? JSON.parse(raw) : null);
+      }catch(e){ return Promise.resolve(null); }
+    }
+    return fetch('/api/kv?key=' + encodeURIComponent(key)).then(function(r){
+      if(!r.ok) throw new Error('gagal memuat ' + key);
+      return r.json();
+    }).then(function(d){ return d ? d.value : null; }).catch(function(e){
+      showDiag('Gagal memuat data dari server: ' + (e && e.message ? e.message : e));
+      return null;
+    });
+  }
+  function sSet(key, value, shared){
+    shared = shared !== false;
+    if(!shared){
+      try{
+        window.localStorage.setItem(lsKey(key), JSON.stringify(value));
+        return Promise.resolve({key:key, value:value, shared:false});
+      }catch(e){ return Promise.resolve(null); }
+    }
+    return fetch('/api/kv', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({key:key, value:value})
+    }).then(function(r){
+      if(!r.ok) throw new Error('gagal menyimpan ' + key);
+      return {key:key, value:value, shared:true};
+    }).catch(function(e){
+      console.error('gagal menyimpan', key, e);
+      showDiag('Gagal menyimpan data ke server: ' + (e && e.message ? e.message : e));
+      return null;
+    });
+  }
+  function sList(prefix, shared){
+    shared = shared !== false;
+    if(!shared) return Promise.resolve([]);
+    return fetch('/api/kv/list?prefix=' + encodeURIComponent(prefix || '')).then(function(r){
+      if(!r.ok) throw new Error('gagal memuat daftar kunci');
+      return r.json();
+    }).then(function(d){ return (d && d.keys) || []; }).catch(function(e){
+      showDiag('Gagal memuat data dari server: ' + (e && e.message ? e.message : e));
+      return [];
+    });
+  }
+
+  function slugify(s){
+    return String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+  }
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+
+  function toast(msg){
+    var t = document.createElement('div');
+    t.className = 'bn-toast';
+    t.textContent = msg;
+    root.appendChild(t);
+    setTimeout(function(){ t.remove(); }, 2600);
+  }
+
+  // ---------- LOGIN VIEW ----------
+  function refreshGuruDropdown(){
+    var sel = qs('#bn-login-guru');
+    sel.innerHTML = '';
+    if(state.guruList.length === 0){
+      var opt = document.createElement('option');
+      opt.textContent = 'Belum ada guru terdaftar';
+      opt.value = '';
+      sel.appendChild(opt);
+      return;
+    }
+    state.guruList.forEach(function(g){
+      var opt = document.createElement('option');
+      opt.value = g.id;
+      opt.textContent = g.nama + ' \u2014 ' + g.mapel;
+      sel.appendChild(opt);
+    });
+  }
+
+  qs('#bn-tab-masuk').addEventListener('click', function(){
+    qs('#bn-tab-masuk').classList.add('active');
+    qs('#bn-tab-daftar').classList.remove('active');
+    qs('#bn-form-masuk').classList.remove('hidden');
+    qs('#bn-form-daftar').classList.add('hidden');
+  });
+  qs('#bn-tab-daftar').addEventListener('click', function(){
+    qs('#bn-tab-daftar').classList.add('active');
+    qs('#bn-tab-masuk').classList.remove('active');
+    qs('#bn-form-daftar').classList.remove('hidden');
+    qs('#bn-form-masuk').classList.add('hidden');
+  });
+  qs('#bn-daftar-mapel').addEventListener('change', function(){
+    qs('#bn-daftar-mapel-lain-wrap').classList.toggle('hidden', this.value !== '__lain__');
+  });
+
+  qs('#bn-form-masuk').addEventListener('submit', function(e){
+    e.preventDefault();
+    var msg = qs('#bn-login-msg');
+    msg.innerHTML = '';
+    var id = qs('#bn-login-guru').value;
+    var pass = qs('#bn-login-pass').value;
+    if(!id){ msg.innerHTML = '<div class="bn-msg err">Pilih akun guru terlebih dahulu.</div>'; return; }
+    var btn = qs('#bn-form-masuk button[type=submit]');
+    btn.disabled = true;
+    fetch('/api/auth/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({guruId:id, password:pass})
+    }).then(function(r){
+      return r.json().then(function(d){ return {ok:r.ok, data:d}; });
+    }).then(function(res){
+      btn.disabled = false;
+      if(!res.ok){
+        msg.innerHTML = '<div class="bn-msg err">' + escapeHtml(res.data && res.data.error ? res.data.error : 'Kata sandi salah.') + '</div>';
+        return;
+      }
+      state.guru = res.data.guru;
+      sSet('bn-last-guru', state.guru.id, false);
+      enterDashboard();
+    }).catch(function(){
+      btn.disabled = false;
+      msg.innerHTML = '<div class="bn-msg err">Tidak dapat terhubung ke server. Periksa koneksi internet.</div>';
+    });
+  });
+
+  qs('#bn-form-daftar').addEventListener('submit', function(e){
+    e.preventDefault();
+    var msg = qs('#bn-daftar-msg');
+    msg.innerHTML = '';
+    var nama = qs('#bn-daftar-nama').value.trim();
+    var mapelSel = qs('#bn-daftar-mapel').value;
+    var mapel = mapelSel === '__lain__' ? qs('#bn-daftar-mapel-lain').value.trim() : mapelSel;
+    var pass = qs('#bn-daftar-pass').value;
+    if(!nama || !mapel){ msg.innerHTML = '<div class="bn-msg err">Nama dan mata pelajaran wajib diisi.</div>'; return; }
+    if(pass.length < 4){ msg.innerHTML = '<div class="bn-msg err">Kata sandi minimal 4 karakter.</div>'; return; }
+    var btn = qs('#bn-form-daftar button[type=submit]');
+    btn.disabled = true;
+    fetch('/api/auth/register', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({nama:nama, mapel:mapel, password:pass})
+    }).then(function(r){
+      return r.json().then(function(d){ return {ok:r.ok, data:d}; });
+    }).then(function(res){
+      btn.disabled = false;
+      if(!res.ok){
+        msg.innerHTML = '<div class="bn-msg err">' + escapeHtml(res.data && res.data.error ? res.data.error : 'Gagal mendaftar. Coba lagi.') + '</div>';
+        return;
+      }
+      state.guru = res.data.guru;
+      state.guruList.push(state.guru);
+      refreshGuruDropdown();
+      sSet('bn-last-guru', state.guru.id, false);
+      enterDashboard();
+    }).catch(function(){
+      btn.disabled = false;
+      msg.innerHTML = '<div class="bn-msg err">Tidak dapat terhubung ke server. Periksa koneksi internet.</div>';
+    });
+  });
+
+  // ---------- DASHBOARD SHELL ----------
+  function enterDashboard(){
+    qs('#bn-view-login').classList.add('hidden');
+    qs('#bn-view-dashboard').classList.remove('hidden');
+    qs('#bn-who').textContent = state.guru.nama;
+    qs('#bn-mapel-badge').textContent = state.guru.mapel;
+    renderSiswaPage();
+    populateKelasDropdowns();
+    // Setelah masuk, menu langsung diarahkan ke "Input Nilai" karena halaman
+    // ini otomatis mengikuti mata pelajaran guru yang sedang login
+    // (state.guru.mapelSlug), lengkap dengan kelas pertama yang sudah terpilih.
+    switchPage('nilai');
+  }
+
+  qs('#bn-logout').addEventListener('click', function(){
+    var btn = qs('#bn-logout');
+    btn.disabled = true;
+    fetch('/api/auth/logout', {method:'POST'}).catch(function(){}).then(function(){
+      btn.disabled = false;
+      state.guru = null;
+      qs('#bn-login-pass').value = '';
+      refreshGuruDropdown();
+      var lastId = state.guruList.length ? state.guruList[state.guruList.length-1].id : '';
+      if(lastId) qs('#bn-login-guru').value = lastId;
+      qs('#bn-view-dashboard').classList.add('hidden');
+      qs('#bn-view-login').classList.remove('hidden');
+    });
+  });
+
+  qsa('.bn-nav button').forEach(function(btn){
+    btn.addEventListener('click', function(){ switchPage(btn.getAttribute('data-view')); });
+  });
+  function switchPage(name){
+    qsa('.bn-nav button').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-view') === name); });
+    ['siswa','nilai','rapot','peringkat'].forEach(function(p){
+      qs('#bn-page-' + p).classList.toggle('hidden', p !== name);
+    });
+    if(name === 'nilai') renderNilaiTable();
+    if(name === 'rapot') renderRapotTable();
+    if(name === 'peringkat') renderPeringkat();
+  }
+
+  function distinctKelas(){
+    var set = {};
+    state.siswa.forEach(function(s){ if(s.kelas) set[s.kelas] = true; });
+    return Object.keys(set).sort();
+  }
+  function populateKelasDropdowns(){
+    var list = distinctKelas();
+    [ {sel:'#bn-siswa-filter-kelas', all:true}, {sel:'#bn-nilai-kelas', all:false}, {sel:'#bn-rapot-kelas', all:false} ].forEach(function(cfg){
+      var sel = qs(cfg.sel);
+      var current = sel.value;
+      sel.innerHTML = '';
+      if(cfg.all){
+        var optAll = document.createElement('option');
+        optAll.value = ''; optAll.textContent = 'Semua kelas';
+        sel.appendChild(optAll);
+      }
+      if(list.length === 0){
+        var o = document.createElement('option');
+        o.value = ''; o.textContent = 'Belum ada kelas';
+        sel.appendChild(o);
+      }
+      list.forEach(function(k){
+        var o = document.createElement('option');
+        o.value = k; o.textContent = 'Kelas ' + k;
+        sel.appendChild(o);
+      });
+      if(list.indexOf(current) > -1) sel.value = current;
+    });
+    state.kelasNilai = qs('#bn-nilai-kelas').value;
+    state.kelasRapot = qs('#bn-rapot-kelas').value;
+    refreshPeringkatCakupan(list);
+  }
+
+  function refreshPeringkatCakupan(list){
+    var sel = qs('#bn-peringkat-cakupan');
+    if(!sel) return;
+    list = list || distinctKelas();
+    var current = sel.value;
+    var html = '<option value="">Keseluruhan sekolah (10 besar)</option>' +
+      '<option value="__semua__">Semua kelas (per kelas, tanpa keseluruhan)</option>';
+    list.forEach(function(k){
+      html += '<option value="' + escapeHtml(k) + '">Hanya Kelas ' + escapeHtml(k) + '</option>';
+    });
+    sel.innerHTML = html;
+    var validValues = ['', '__semua__'].concat(list);
+    if(validValues.indexOf(current) > -1) sel.value = current;
+  }
+  qs('#bn-siswa-filter-kelas').addEventListener('change', function(){
+    state.kelasSiswaFilter = this.value; renderSiswaList();
+  });
+  qs('#bn-nilai-kelas').addEventListener('change', function(){
+    state.kelasNilai = this.value; renderNilaiTable();
+  });
+  qs('#bn-rapot-kelas').addEventListener('change', function(){
+    state.kelasRapot = this.value; renderRapotTable();
+  });
+
+  // ---------- SISWA PAGE ----------
+  function renderSiswaPage(){ renderSiswaList(); updateStatCards(); }
+
+  function updateStatCards(){
+    var box = qs('#bn-stats');
+    if(!box) return;
+    var stats = [
+      {n: state.siswa.length, l: 'Total siswa'},
+      {n: distinctKelas().length, l: 'Jumlah kelas'},
+      {n: state.guruList.length, l: 'Guru terdaftar'}
+    ];
+    box.innerHTML = stats.map(function(s){
+      return '<div class="bn-stat"><div class="n num">' + s.n + '</div><div class="l">' + s.l + '</div></div>';
+    }).join('');
+  }
+
+  qs('#bn-file-siswa').addEventListener('change', function(e){
+    var file = e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        var data = new Uint8Array(ev.target.result);
+        var wb = XLSX.read(data, {type:'array'});
+        var sheet = wb.Sheets[wb.SheetNames[0]];
+        var rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+        var parsed = rows.map(function(row){
+          var keys = Object.keys(row);
+          var find = function(patterns){
+            for(var i=0;i<keys.length;i++){
+              var k = keys[i].toLowerCase().replace(/[^a-z]/g,'');
+              for(var j=0;j<patterns.length;j++){
+                if(k.indexOf(patterns[j]) > -1) return row[keys[i]];
+              }
+            }
+            return '';
+          };
+          return {
+            nisn: String(find(['nisn','nis'])).trim(),
+            nama: String(find(['nama'])).trim(),
+            kelas: String(find(['kelas'])).trim()
+          };
+        }).filter(function(r){ return r.nama; });
+        showImportPreview(parsed);
+      }catch(err){
+        qs('#bn-import-preview').innerHTML = '<div class="bn-msg err" style="margin-top:12px;">Berkas tidak dapat dibaca. Pastikan formatnya .xlsx, .xls, atau .csv.</div>';
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  });
+
+  function showImportPreview(rows){
+    var box = qs('#bn-import-preview');
+    if(rows.length === 0){
+      box.innerHTML = '<div class="bn-msg err" style="margin-top:12px;">Tidak ada baris yang dikenali. Periksa nama kolom NISN/Nama/Kelas.</div>';
+      return;
+    }
+    var html = '<div class="bn-msg ok" style="margin-top:14px;">' + rows.length + ' siswa ditemukan pada berkas.</div>';
+    html += '<div style="max-height:220px;overflow:auto;margin-top:8px;border:1px solid var(--line);border-radius:4px;">';
+    html += '<table class="bn-table"><thead><tr><th>NISN</th><th>Nama</th><th>Kelas</th></tr></thead><tbody>';
+    rows.slice(0,200).forEach(function(r){
+      html += '<tr><td class="num">' + escapeHtml(r.nisn||'-') + '</td><td>' + escapeHtml(r.nama) + '</td><td>' + escapeHtml(r.kelas||'-') + '</td></tr>';
+    });
+    html += '</tbody></table></div>';
+    html += '<div class="bn-actions" style="margin-top:12px;"><button class="bn-btn sm" id="bn-confirm-import">Tambahkan ' + rows.length + ' siswa</button></div>';
+    box.innerHTML = html;
+    qs('#bn-confirm-import').addEventListener('click', function(){
+      var added = 0, updated = 0;
+      rows.forEach(function(r){
+        var idKey = r.nisn ? 'nisn:' + r.nisn : 'nk:' + slugify(r.nama + '-' + r.kelas);
+        var existing = state.siswa.filter(function(s){ return s._key === idKey; })[0];
+        if(existing){
+          existing.nama = r.nama; existing.kelas = r.kelas; updated++;
+        }else{
+          state.siswa.push({id:uid(), _key:idKey, nisn:r.nisn, nama:r.nama, kelas:r.kelas});
+          added++;
+        }
+      });
+      sSet('bn-siswa-master', state.siswa, true).then(function(){
+        toast('Berhasil: ' + added + ' siswa baru, ' + updated + ' diperbarui.');
+        box.innerHTML = '';
+        populateKelasDropdowns();
+        renderSiswaList();
+        updateStatCards();
+      });
+    });
+  }
+
+  function renderSiswaList(){
+    var box = qs('#bn-siswa-list');
+    var filter = state.kelasSiswaFilter;
+    var list = state.siswa.filter(function(s){ return !filter || s.kelas === filter; })
+      .sort(function(a,b){ return (a.kelas+a.nama).localeCompare(b.kelas+b.nama); });
+    if(list.length === 0){
+      box.innerHTML = '<div class="bn-empty">Belum ada data siswa. <b>Impor berkas Excel/CSV</b> di atas untuk memulai.</div>';
+      return;
+    }
+    var html = '<table class="bn-table"><thead><tr><th>NISN</th><th>Nama</th><th>Kelas</th><th></th></tr></thead><tbody>';
+    list.forEach(function(s){
+      html += '<tr><td class="num">' + escapeHtml(s.nisn||'-') + '</td><td>' + escapeHtml(s.nama) + '</td><td>' + escapeHtml(s.kelas||'-') + '</td>' +
+        '<td><button class="bn-pill-btn danger" data-del="' + s.id + '">Hapus</button></td></tr>';
+    });
+    html += '</tbody></table>';
+    box.innerHTML = html;
+    qsa('[data-del]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-del');
+        state.siswa = state.siswa.filter(function(s){ return s.id !== id; });
+        sSet('bn-siswa-master', state.siswa, true).then(function(){
+          populateKelasDropdowns(); renderSiswaList(); updateStatCards();
+        });
+      });
+    });
+  }
+
+  // ---------- NILAI PAGE ----------
+  function nilaiKey(kelas, mapelSlug){ return 'bn-nilai__' + slugify(kelas) + '__' + mapelSlug; }
+
+  function renderNilaiTable(){
+    var body = qs('#bn-nilai-body');
+    var kelas = state.kelasNilai;
+    qs('#bn-nilai-status').textContent = '';
+    if(!kelas){
+      body.innerHTML = '<div class="bn-empty">Pilih kelas, atau impor data siswa terlebih dahulu di menu <b>Kelola Siswa</b>.</div>';
+      return;
+    }
+    var list = state.siswa.filter(function(s){ return s.kelas === kelas; }).sort(function(a,b){ return a.nama.localeCompare(b.nama); });
+    if(list.length === 0){
+      body.innerHTML = '<div class="bn-empty">Belum ada siswa di kelas ini.</div>';
+      return;
+    }
+    var key = nilaiKey(kelas, state.guru.mapelSlug);
+    sGet(key, true).then(function(saved){
+      state.nilaiCache[key] = saved || {};
+      var html = '<table class="bn-table"><thead><tr><th>Nama</th><th>Harian</th><th>UTS</th><th>UAS</th><th>Nilai Akhir</th><th>Predikat</th></tr></thead><tbody>';
+      list.forEach(function(s){
+        var v = state.nilaiCache[key][s.id] || {tugas:'', uts:'', uas:''};
+        html += '<tr data-siswa="' + s.id + '">' +
+          '<td>' + escapeHtml(s.nama) + '</td>' +
+          '<td><input type="number" min="0" max="100" class="bn-in-tugas num" value="' + (v.tugas!==undefined?v.tugas:'') + '"></td>' +
+          '<td><input type="number" min="0" max="100" class="bn-in-uts num" value="' + (v.uts!==undefined?v.uts:'') + '"></td>' +
+          '<td><input type="number" min="0" max="100" class="bn-in-uas num" value="' + (v.uas!==undefined?v.uas:'') + '"></td>' +
+          '<td class="num bn-out-akhir">' + (v.akhir!==undefined?v.akhir:'\u2013') + '</td>' +
+          '<td class="bn-out-predikat">' + (v.predikat? predikatBadge(v.predikat) : '\u2013') + '</td>' +
+          '</tr>';
+      });
+      html += '</tbody></table>';
+      body.innerHTML = html;
+      qsa('#bn-nilai-body tr[data-siswa]').forEach(function(tr){
+        ['bn-in-tugas','bn-in-uts','bn-in-uas'].forEach(function(cls){
+          tr.querySelector('.' + cls).addEventListener('input', function(){ recomputeRow(tr); });
+        });
+      });
+    });
+  }
+
+  function nilaiAkhir(tugas, uts, uas){
+    var t = parseFloat(tugas), u = parseFloat(uts), a = parseFloat(uas);
+    if(isNaN(t) && isNaN(u) && isNaN(a)) return null;
+    t = isNaN(t)?0:t; u = isNaN(u)?0:u; a = isNaN(a)?0:a;
+    return Math.round(t*0.3 + u*0.3 + a*0.4);
+  }
+  function predikatFor(nilai){
+    if(nilai === null) return '';
+    if(nilai >= 90) return 'A';
+    if(nilai >= 80) return 'B';
+    if(nilai >= 70) return 'C';
+    return 'D';
+  }
+  var predikatLabel = {A:'Sangat Baik', B:'Baik', C:'Cukup', D:'Perlu Bimbingan'};
+  function predikatBadge(p){
+    return '<span class="bn-predikat ' + p + '">' + p + ' \u2014 ' + predikatLabel[p] + '</span>';
+  }
+  function recomputeRow(tr){
+    var tugas = tr.querySelector('.bn-in-tugas').value;
+    var uts = tr.querySelector('.bn-in-uts').value;
+    var uas = tr.querySelector('.bn-in-uas').value;
+    var akhir = nilaiAkhir(tugas, uts, uas);
+    var pred = predikatFor(akhir);
+    tr.querySelector('.bn-out-akhir').textContent = akhir === null ? '\u2013' : akhir;
+    tr.querySelector('.bn-out-predikat').innerHTML = pred ? predikatBadge(pred) : '\u2013';
+  }
+
+  qs('#bn-simpan-nilai').addEventListener('click', function(){
+    var kelas = state.kelasNilai;
+    if(!kelas) return;
+    var key = nilaiKey(kelas, state.guru.mapelSlug);
+    var data = {};
+    qsa('#bn-nilai-body tr[data-siswa]').forEach(function(tr){
+      var sid = tr.getAttribute('data-siswa');
+      var tugas = tr.querySelector('.bn-in-tugas').value;
+      var uts = tr.querySelector('.bn-in-uts').value;
+      var uas = tr.querySelector('.bn-in-uas').value;
+      var akhir = nilaiAkhir(tugas, uts, uas);
+      if(tugas === '' && uts === '' && uas === '') return;
+      data[sid] = {
+        tugas: tugas === ''? '' : parseFloat(tugas),
+        uts: uts === ''? '' : parseFloat(uts),
+        uas: uas === ''? '' : parseFloat(uas),
+        akhir: akhir,
+        predikat: predikatFor(akhir)
+      };
+    });
+    sSet(key, data, true).then(function(){
+      state.nilaiCache[key] = data;
+      qs('#bn-nilai-status').textContent = 'Tersimpan \u00b7 ' + new Date().toLocaleTimeString('id-ID');
+      toast('Nilai ' + state.guru.mapel + ' kelas ' + kelas + ' tersimpan.');
+    });
+  });
+
+  // ---------- RAPOT PAGE ----------
+  qs('#bn-set-sekolah').value = state.settings.namaSekolah;
+  qs('#bn-simpan-setting').addEventListener('click', function(){
+    state.settings = {
+      namaSekolah: qs('#bn-set-sekolah').value.trim() || 'Sekolah Dasar',
+      kepsek: qs('#bn-set-kepsek').value.trim(),
+      kota: qs('#bn-set-kota').value.trim(),
+      tahunAjaran: qs('#bn-set-tahun').value.trim() || '-',
+      semester: qs('#bn-set-semester').value
+    };
+    sSet('bn-settings', state.settings, true).then(function(){ toast('Pengaturan rapor disimpan.'); });
+  });
+
+  function generateCatatan(nama, siswaId, mapelColumns){
+    var nilaiList = [];
+    mapelColumns.forEach(function(m){
+      var v = m.data[siswaId];
+      if(v && v.akhir !== null && v.akhir !== undefined){ nilaiList.push({label: m.label, akhir: v.akhir}); }
+    });
+    if(nilaiList.length === 0){ return 'Nilai belum lengkap untuk menyusun catatan otomatis.'; }
+    var total = nilaiList.reduce(function(sum, n){ return sum + n.akhir; }, 0);
+    var rata = Math.round((total / nilaiList.length) * 10) / 10;
+    var pred = predikatFor(Math.round(rata));
+    var sorted = nilaiList.slice().sort(function(a,b){ return b.akhir - a.akhir; });
+    var terbaik = sorted[0], perlu = sorted[sorted.length - 1];
+    var depan = String(nama).trim().split(' ')[0];
+    var capaian = pred === 'A' ? 'sangat baik' : pred === 'B' ? 'baik' : pred === 'C' ? 'cukup baik' : 'yang masih perlu bimbingan';
+    var kalimat = 'Ananda ' + depan + ' menunjukkan capaian ' + capaian + ' pada semester ini dengan rata-rata nilai ' + rata + '.';
+    if(terbaik && perlu && terbaik.label !== perlu.label && terbaik.akhir !== perlu.akhir){
+      kalimat += ' Capaian terbaik ditunjukkan pada mata pelajaran ' + terbaik.label + ', sementara ' + perlu.label + ' masih perlu ditingkatkan.';
+    }
+    kalimat += (pred === 'A' || pred === 'B') ? ' Pertahankan semangat belajar yang sudah ditunjukkan.' : ' Tetap semangat dan terus berlatih setiap hari.';
+    return kalimat;
+  }
+
+  function catatanKey(kelas){ return 'bn-catatan__' + slugify(kelas); }
+
+  function renderRapotTable(){
+    var box = qs('#bn-rapot-table');
+    var catatanPanel = qs('#bn-panel-catatan');
+    var kelas = state.kelasRapot;
+    catatanPanel.classList.add('hidden');
+    if(!kelas){
+      box.innerHTML = '<div class="bn-empty">Pilih kelas untuk melihat rekap nilai.</div>';
+      return;
+    }
+    sGet('bn-wali-kelas', true).then(function(waliMap){
+      waliMap = waliMap || {};
+      qs('#bn-rapot-wali').value = waliMap[kelas] || '';
+    });
+    var list = state.siswa.filter(function(s){ return s.kelas === kelas; }).sort(function(a,b){ return a.nama.localeCompare(b.nama); });
+    if(list.length === 0){
+      box.innerHTML = '<div class="bn-empty">Belum ada siswa di kelas ini.</div>';
+      return;
+    }
+    sList('bn-nilai__' + slugify(kelas) + '__', true).then(function(keys){
+      if(keys.length === 0){
+        box.innerHTML = '<div class="bn-empty">Belum ada nilai yang diinput guru mana pun untuk kelas ini.</div>';
+        return;
+      }
+      Promise.all([
+        Promise.all(keys.map(function(k){ return sGet(k, true); })),
+        sGet(catatanKey(kelas), true)
+      ]).then(function(res){
+        var allData = res[0];
+        var savedCatatan = res[1] || {};
+        var mapelColumns = keys.map(function(k, i){
+          var slug = k.split('__')[2];
+          var displayGuru = state.guruList.filter(function(g){ return g.mapelSlug === slug; })[0];
+          return {slug: slug, label: displayGuru ? displayGuru.mapel : slug, data: allData[i] || {}};
+        });
+        var html = '<div style="overflow:auto;"><table class="bn-table"><thead><tr><th>Nama</th>';
+        mapelColumns.forEach(function(m){ html += '<th>' + escapeHtml(m.label) + '</th>'; });
+        html += '<th></th></tr></thead><tbody>';
+        list.forEach(function(s){
+          html += '<tr><td>' + escapeHtml(s.nama) + '</td>';
+          mapelColumns.forEach(function(m){
+            var v = m.data[s.id];
+            html += '<td class="num">' + (v && v.akhir !== null && v.akhir !== undefined ? v.akhir : '\u2013') + '</td>';
+          });
+          html += '<td><button class="bn-pill-btn outline" data-pdf="' + s.id + '">Unduh PDF</button></td></tr>';
+        });
+        html += '</tbody></table></div>';
+        box.innerHTML = html;
+
+        var catatanHtml = list.map(function(s){
+          var teks = savedCatatan[s.id] !== undefined ? savedCatatan[s.id] : generateCatatan(s.nama, s.id, mapelColumns);
+          return '<div class="bn-catatan-item">' +
+            '<div class="nm">' + escapeHtml(s.nama) + '<button type="button" class="bn-link-btn" data-regen="' + s.id + '">Buat ulang otomatis</button></div>' +
+            '<textarea data-catatan-input="' + s.id + '">' + escapeHtml(teks) + '</textarea>' +
+            '</div>';
+        }).join('');
+        qs('#bn-catatan-list').innerHTML = catatanHtml;
+        catatanPanel.classList.remove('hidden');
+        qs('#bn-catatan-status').textContent = '';
+
+        qsa('[data-regen]').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var sid = btn.getAttribute('data-regen');
+            var siswa = list.filter(function(s){ return s.id === sid; })[0];
+            var ta = qs('[data-catatan-input="' + sid + '"]');
+            ta.value = generateCatatan(siswa.nama, sid, mapelColumns);
+          });
+        });
+
+        qsa('[data-pdf]').forEach(function(btn){
+          btn.addEventListener('click', function(){
+            var sid = btn.getAttribute('data-pdf');
+            var siswa = list.filter(function(s){ return s.id === sid; })[0];
+            var ta = qs('[data-catatan-input="' + sid + '"]');
+            var catatanText = ta ? ta.value : generateCatatan(siswa.nama, sid, mapelColumns);
+            var doc = buildRaporPDF(siswa, kelas, mapelColumns, qs('#bn-rapot-wali').value, catatanText);
+            doc.save('Rapor_' + slugify(siswa.nama) + '.pdf');
+          });
+        });
+      });
+    });
+  }
+
+  qs('#bn-simpan-catatan').addEventListener('click', function(){
+    var kelas = state.kelasRapot;
+    if(!kelas) return;
+    var map = {};
+    qsa('[data-catatan-input]').forEach(function(ta){
+      map[ta.getAttribute('data-catatan-input')] = ta.value;
+    });
+    sSet(catatanKey(kelas), map, true).then(function(){
+      qs('#bn-catatan-status').textContent = 'Tersimpan \u00b7 ' + new Date().toLocaleTimeString('id-ID');
+      toast('Catatan wali kelas ' + kelas + ' tersimpan.');
+    });
+  });
+
+  qs('#bn-rapot-wali').addEventListener('change', function(){
+    var kelas = state.kelasRapot;
+    if(!kelas) return;
+    sGet('bn-wali-kelas', true).then(function(m){
+      m = m || {};
+      m[kelas] = qs('#bn-rapot-wali').value.trim();
+      sSet('bn-wali-kelas', m, true);
+    });
+  });
+
+  qs('#bn-unduh-zip').addEventListener('click', function(){
+    var kelas = state.kelasRapot;
+    if(!kelas){ toast('Pilih kelas terlebih dahulu.'); return; }
+    var list = state.siswa.filter(function(s){ return s.kelas === kelas; }).sort(function(a,b){ return a.nama.localeCompare(b.nama); });
+    if(list.length === 0){ toast('Belum ada siswa di kelas ini.'); return; }
+    sList('bn-nilai__' + slugify(kelas) + '__', true).then(function(keys){
+      if(keys.length === 0){ toast('Belum ada nilai untuk kelas ini.'); return; }
+      Promise.all(keys.map(function(k){ return sGet(k, true); })).then(function(allData){
+        var mapelColumns = keys.map(function(k, i){
+          var slug = k.split('__')[2];
+          var displayGuru = state.guruList.filter(function(g){ return g.mapelSlug === slug; })[0];
+          return {slug: slug, label: displayGuru ? displayGuru.mapel : slug, data: allData[i] || {}};
+        });
+        var wali = qs('#bn-rapot-wali').value;
+        var zip = new JSZip();
+        list.forEach(function(s){
+          var ta = qs('[data-catatan-input="' + s.id + '"]');
+          var catatanText = ta ? ta.value : generateCatatan(s.nama, s.id, mapelColumns);
+          var doc = buildRaporPDF(s, kelas, mapelColumns, wali, catatanText);
+          var blob = doc.output('blob');
+          zip.file('Rapor_' + slugify(s.nama) + '.pdf', blob);
+        });
+        toast('Menyusun berkas ZIP\u2026');
+        zip.generateAsync({type:'blob'}).then(function(content){
+          var url = URL.createObjectURL(content);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'Rapor_Kelas_' + kelas + '.zip';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+          toast('Rapor kelas ' + kelas + ' (' + list.length + ' siswa) berhasil diunduh.');
+        });
+      });
+    });
+  });
+
+  function buildRaporPDF(siswa, kelas, mapelColumns, wali, catatanText){
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({unit:'mm', format:'a4'});
+    var pageW = 210, marginX = 20, y = 22;
+
+    var namaSekolahLive = (qs('#bn-set-sekolah') && qs('#bn-set-sekolah').value.trim()) || state.settings.namaSekolah || 'Sekolah Dasar';
+    var kepsekLive = (qs('#bn-set-kepsek') && qs('#bn-set-kepsek').value.trim()) || state.settings.kepsek || '';
+    var kotaLive = (qs('#bn-set-kota') && qs('#bn-set-kota').value.trim()) || state.settings.kota || '';
+    var tahunLive = (qs('#bn-set-tahun') && qs('#bn-set-tahun').value.trim()) || state.settings.tahunAjaran || '-';
+    var semesterLive = (qs('#bn-set-semester') && qs('#bn-set-semester').value) || state.settings.semester || '-';
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(13);
+    doc.text('LAPORAN HASIL BELAJAR SISWA', pageW/2, y, {align:'center'});
+    y += 6;
+    doc.setFontSize(10); doc.setFont('helvetica','normal');
+    doc.text(namaSekolahLive, pageW/2, y, {align:'center'});
+    y += 8;
+    doc.setDrawColor(43,74,62); doc.setLineWidth(0.6);
+    doc.line(marginX, y, pageW-marginX, y);
+    y += 8;
+
+    doc.setFontSize(10);
+    var leftX = marginX, rightX = 118, lh = 6;
+    var rows = [
+      ['Nama Siswa', siswa.nama, 'Kelas', kelas],
+      ['NISN', siswa.nisn || '-', 'Semester', semesterLive],
+      ['Tahun Ajaran', tahunLive, 'Wali Kelas', wali || '-']
+    ];
+    rows.forEach(function(r){
+      doc.setFont('helvetica','normal');
+      doc.text(r[0], leftX, y); doc.text(':', leftX+32, y); doc.text(String(r[1]), leftX+36, y);
+      doc.text(r[2], rightX, y); doc.text(':', rightX+26, y); doc.text(String(r[3]), rightX+30, y);
+      y += lh;
+    });
+    y += 4;
+
+    var body = mapelColumns.map(function(m, idx){
+      var v = m.data[siswa.id];
+      var nilai = v && v.akhir !== null && v.akhir !== undefined ? v.akhir : '-';
+      var pred = v && v.predikat ? (v.predikat + ' \u2014 ' + predikatLabel[v.predikat]) : '-';
+      return [String(idx+1), m.label, String(nilai), pred];
+    });
+    doc.autoTable({
+      startY: y,
+      head: [['No','Mata Pelajaran','Nilai','Predikat']],
+      body: body,
+      theme: 'grid',
+      styles: {font:'helvetica', fontSize:9.5, cellPadding:2.4, textColor:[32,38,31]},
+      headStyles: {fillColor:[43,74,62], textColor:[247,244,231], fontStyle:'bold'},
+      columnStyles: {0:{cellWidth:10, halign:'center'}, 2:{cellWidth:20, halign:'center'}, 3:{cellWidth:42}},
+      margin: {left: marginX, right: marginX}
+    });
+    var afterY = doc.lastAutoTable.finalY + 10;
+
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5);
+    doc.text('Catatan Wali Kelas:', marginX, afterY);
+    doc.setFont('helvetica','normal');
+    var catatanLines = doc.splitTextToSize(catatanText || '-', pageW - marginX*2 - 6);
+    var catatanBlockH = catatanLines.length * 4.6 + 6;
+    doc.setDrawColor(220,211,187);
+    doc.rect(marginX, afterY + 4, pageW - marginX*2, catatanBlockH);
+    doc.text(catatanLines, marginX + 3, afterY + 10);
+
+    var sigY = afterY + 4 + catatanBlockH + 24;
+    if(sigY + 36 > 285){ doc.addPage(); sigY = 40; }
+    var today = new Date().toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'});
+    var kotaTanggal = (kotaLive ? kotaLive : '...................') + ', ' + today;
+    doc.text(kotaTanggal, pageW-marginX-55, sigY-6);
+    doc.text('Wali Kelas', marginX, sigY);
+    doc.text('Kepala Sekolah', pageW-marginX-55, sigY);
+    doc.text('( ' + (wali || '.'.repeat(24)) + ' )', marginX, sigY+20);
+    doc.text('( ' + (kepsekLive || '.'.repeat(24)) + ' )', pageW-marginX-55, sigY+20);
+
+    return doc;
+  }
+
+  // ---------- PERINGKAT PAGE ----------
+  function computeSemuaNilai(){
+    var kelasList = distinctKelas();
+    if(kelasList.length === 0) return Promise.resolve([]);
+    return Promise.all(kelasList.map(function(kelas){
+      return sList('bn-nilai__' + slugify(kelas) + '__', true).then(function(keys){
+        if(keys.length === 0) return [];
+        return Promise.all(keys.map(function(k){ return sGet(k, true); })).then(function(allData){
+          var siswaKelas = state.siswa.filter(function(s){ return s.kelas === kelas; });
+          return siswaKelas.map(function(s){
+            var nilaiList = [];
+            allData.forEach(function(data){
+              var v = data && data[s.id];
+              if(v && v.akhir !== null && v.akhir !== undefined) nilaiList.push(v.akhir);
+            });
+            if(nilaiList.length === 0) return null;
+            var total = nilaiList.reduce(function(sum, n){ return sum + n; }, 0);
+            var rata = Math.round((total / nilaiList.length) * 10) / 10;
+            return {id: s.id, nama: s.nama, kelas: kelas, rata: rata, jumlah: nilaiList.length};
+          }).filter(function(r){ return r !== null; });
+        });
+      });
+    })).then(function(perKelas){
+      var flat = [];
+      perKelas.forEach(function(arr){ flat = flat.concat(arr); });
+      return flat;
+    });
+  }
+
+  function rankRowsHtml(rows){
+    if(rows.length === 0) return '<div class="bn-empty">Belum ada nilai untuk disusun peringkatnya.</div>';
+    var html = '<table class="bn-table"><thead><tr><th style="width:36px;"></th><th>Nama</th><th>Kelas</th><th>Rata-rata</th></tr></thead><tbody>';
+    rows.forEach(function(r, i){
+      var n = i + 1;
+      var cls = n <= 3 ? 'rank-' + n : 'rank-other';
+      html += '<tr><td><span class="bn-rank ' + cls + '">' + n + '</span></td><td>' + escapeHtml(r.nama) + '</td><td>' + escapeHtml(r.kelas) + '</td><td class="num">' + r.rata + '</td></tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function buildRanking(all){
+    var sortFn = function(a,b){ return b.rata - a.rata || a.nama.localeCompare(b.nama); };
+    var overall = all.slice().sort(sortFn).slice(0, 10);
+    var byKelas = {};
+    all.forEach(function(r){ (byKelas[r.kelas] = byKelas[r.kelas] || []).push(r); });
+    var kelasKeys = Object.keys(byKelas).sort();
+    var perKelas = {};
+    kelasKeys.forEach(function(k){ perKelas[k] = byKelas[k].slice().sort(sortFn).slice(0, 10); });
+    return {overall: overall, perKelas: perKelas, kelasKeys: kelasKeys};
+  }
+
+  function renderPeringkat(){
+    var body = qs('#bn-peringkat-body');
+    body.innerHTML = '<div class="bn-empty">Menyusun peringkat\u2026</div>';
+    computeSemuaNilai().then(function(all){
+      if(all.length === 0){
+        body.innerHTML = '<div class="bn-empty">Belum ada nilai yang dapat digunakan untuk menyusun peringkat.</div>';
+        return;
+      }
+      var rk = buildRanking(all);
+      var html = '<h3 style="font-size:15px;color:var(--green-dark);margin-bottom:10px;">Peringkat keseluruhan sekolah</h3>';
+      html += rankRowsHtml(rk.overall);
+      html += '<h3 style="font-size:15px;color:var(--green-dark);margin:20px 0 10px 0;">Peringkat per kelas</h3>';
+      rk.kelasKeys.forEach(function(kelas){
+        var top10 = rk.perKelas[kelas];
+        html += '<details class="bn-kelas-group"><summary>Kelas ' + escapeHtml(kelas) + ' &middot; ' + top10.length + ' siswa</summary>' +
+          '<div class="bn-kelas-body">' + rankRowsHtml(top10) + '</div></details>';
+      });
+      body.innerHTML = html;
+    });
+  }
+
+  qs('#bn-muat-peringkat').addEventListener('click', renderPeringkat);
+
+  function safeSheetName(s){
+    var cleaned = String(s).replace(/[:\\\/\?\*\[\]]/g, '-').trim();
+    return (cleaned.slice(0, 31)) || 'Kelas';
+  }
+
+  qs('#bn-ekspor-peringkat-excel').addEventListener('click', function(){
+    var cakupan = qs('#bn-peringkat-cakupan').value;
+    computeSemuaNilai().then(function(all){
+      if(all.length === 0){ toast('Belum ada nilai yang bisa diekspor.'); return; }
+      var rk = buildRanking(all);
+      var wb = XLSX.utils.book_new();
+      var usedNames = {};
+      var addKelasSheet = function(kelas){
+        var rowsKelas = rk.perKelas[kelas] || [];
+        var rows = [['No','Nama','Rata-rata']].concat(
+          rowsKelas.map(function(r,i){ return [i+1, r.nama, r.rata]; })
+        );
+        var name = safeSheetName('Kelas ' + kelas);
+        var base = name, n2 = 2;
+        while(usedNames[name]){ name = (base.slice(0, 28) + '-' + n2); n2++; }
+        usedNames[name] = true;
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), name);
+      };
+      var filename = 'Peringkat_Nilai.xlsx';
+
+      if(cakupan === '__semua__'){
+        if(rk.kelasKeys.length === 0){ toast('Belum ada nilai kelas untuk diekspor.'); return; }
+        rk.kelasKeys.forEach(addKelasSheet);
+        filename = 'Peringkat_SemuaKelas.xlsx';
+      }else if(cakupan){
+        if(!rk.perKelas[cakupan] || rk.perKelas[cakupan].length === 0){ toast('Belum ada nilai untuk Kelas ' + cakupan + '.'); return; }
+        addKelasSheet(cakupan);
+        filename = 'Peringkat_Kelas_' + slugify(cakupan) + '.xlsx';
+      }else{
+        var overallRows = [['No','Nama','Kelas','Rata-rata']].concat(
+          rk.overall.map(function(r,i){ return [i+1, r.nama, r.kelas, r.rata]; })
+        );
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(overallRows), 'Keseluruhan');
+        usedNames['Keseluruhan'] = true;
+        filename = 'Peringkat_Keseluruhan.xlsx';
+      }
+
+      XLSX.writeFile(wb, filename);
+      toast('Peringkat berhasil diekspor ke Excel.');
+    });
+  });
+
+  qs('#bn-ekspor-peringkat-pdf').addEventListener('click', function(){
+    var cakupan = qs('#bn-peringkat-cakupan').value;
+    computeSemuaNilai().then(function(all){
+      if(all.length === 0){ toast('Belum ada nilai yang bisa diekspor.'); return; }
+      var rk = buildRanking(all);
+      if(cakupan && cakupan !== '__semua__' && (!rk.perKelas[cakupan] || rk.perKelas[cakupan].length === 0)){
+        toast('Belum ada nilai untuk Kelas ' + cakupan + '.'); return;
+      }
+      if(cakupan === '__semua__' && rk.kelasKeys.length === 0){
+        toast('Belum ada nilai kelas untuk diekspor.'); return;
+      }
+      var jsPDF = window.jspdf.jsPDF;
+      var doc = new jsPDF({unit:'mm', format:'a4'});
+      var pageW = 210, marginX = 18, y = 20;
+      var namaSekolah = (qs('#bn-set-sekolah') && qs('#bn-set-sekolah').value.trim()) || state.settings.namaSekolah || 'Sekolah Dasar';
+      var judul = cakupan === '' ? 'PERINGKAT NILAI KESELURUHAN SEKOLAH' :
+        cakupan === '__semua__' ? 'PERINGKAT NILAI PER KELAS' : 'PERINGKAT NILAI KELAS ' + cakupan.toUpperCase();
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(13);
+      doc.text(judul, pageW/2, y, {align:'center'});
+      y += 6;
+      doc.setFontSize(10); doc.setFont('helvetica','normal');
+      doc.text(namaSekolah, pageW/2, y, {align:'center'});
+      y += 5;
+      doc.setDrawColor(43,74,62); doc.setLineWidth(0.5);
+      doc.line(marginX, y, pageW-marginX, y);
+      y += 9;
+
+      var addKelasTable = function(kelas){
+        if(y > 245){ doc.addPage(); y = 20; }
+        doc.setFontSize(11); doc.setFont('helvetica','bold');
+        doc.text('Kelas ' + kelas + ' (10 Besar)', marginX, y);
+        doc.autoTable({
+          startY: y + 3,
+          head: [['No','Nama','Rata-rata']],
+          body: (rk.perKelas[kelas] || []).map(function(r,i){ return [String(i+1), r.nama, String(r.rata)]; }),
+          theme: 'grid',
+          styles: {font:'helvetica', fontSize:9, cellPadding:2.2},
+          headStyles: {fillColor:[43,74,62], textColor:[247,244,231], fontStyle:'bold'},
+          margin: {left: marginX, right: marginX}
+        });
+        y = doc.lastAutoTable.finalY + 12;
+      };
+
+      var filename = 'Peringkat_Nilai.pdf';
+      if(cakupan === '__semua__'){
+        rk.kelasKeys.forEach(addKelasTable);
+        filename = 'Peringkat_SemuaKelas.pdf';
+      }else if(cakupan){
+        addKelasTable(cakupan);
+        filename = 'Peringkat_Kelas_' + slugify(cakupan) + '.pdf';
+      }else{
+        doc.setFontSize(11); doc.setFont('helvetica','bold');
+        doc.text('Peringkat Keseluruhan Sekolah (10 Besar)', marginX, y);
+        doc.autoTable({
+          startY: y + 3,
+          head: [['No','Nama','Kelas','Rata-rata']],
+          body: rk.overall.map(function(r,i){ return [String(i+1), r.nama, r.kelas, String(r.rata)]; }),
+          theme: 'grid',
+          styles: {font:'helvetica', fontSize:9, cellPadding:2.2},
+          headStyles: {fillColor:[43,74,62], textColor:[247,244,231], fontStyle:'bold'},
+          margin: {left: marginX, right: marginX}
+        });
+        filename = 'Peringkat_Keseluruhan.pdf';
+      }
+
+      doc.save(filename);
+      toast('Peringkat berhasil diekspor ke PDF.');
+    });
+  });
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  // ---------- DIAGNOSTICS ----------
+  function showDiag(text){
+    var d = qs('#bn-diag');
+    d.textContent = text;
+    d.classList.remove('hidden');
+  }
+  window.addEventListener('error', function(ev){
+    showDiag('Terjadi kesalahan: ' + (ev.message || 'tidak diketahui') + (ev.lineno ? (' (baris ' + ev.lineno + ')') : ''));
+  });
+
+  // ---------- INIT ----------
+  // Daftar guru diambil dari /api/guru (tanpa kata sandi -- itu hanya
+  // diverifikasi di server saat login/daftar). Sesi yang masih aktif
+  // (cookie bn_session) dicek lewat /api/auth/me agar refresh halaman
+  // tidak perlu login ulang.
+  Promise.all([
+    fetch('/api/guru').then(function(r){ return r.json(); }).then(function(d){ return (d && d.guruList) || []; }).catch(function(){ return []; }),
+    sGet('bn-siswa-master', true),
+    sGet('bn-settings', true),
+    sGet('bn-last-guru', false),
+    fetch('/api/auth/me').then(function(r){ return r.json(); }).then(function(d){ return (d && d.guru) || null; }).catch(function(){ return null; })
+  ]).then(function(res){
+    state.guruList = res[0] || [];
+    state.siswa = res[1] || [];
+    state.settings = res[2] || state.settings;
+    var lastGuru = res[3];
+    var sesiAktif = res[4];
+    refreshGuruDropdown();
+    if(lastGuru && state.guruList.some(function(g){ return g.id === lastGuru; })){
+      qs('#bn-login-guru').value = lastGuru;
+    }
+    qs('#bn-set-sekolah').value = state.settings.namaSekolah || '';
+    qs('#bn-set-kepsek').value = state.settings.kepsek || '';
+    qs('#bn-set-kota').value = state.settings.kota || '';
+    qs('#bn-set-tahun').value = state.settings.tahunAjaran || '';
+    qs('#bn-set-semester').value = state.settings.semester || 'Ganjil';
+    if(sesiAktif){
+      state.guru = sesiAktif;
+      enterDashboard();
+    }
+  }).catch(function(e){
+    showDiag('Gagal memuat data awal: ' + (e && e.message ? e.message : e));
+  });
+
+})();
+</script>
+
+</body>
+</html>
