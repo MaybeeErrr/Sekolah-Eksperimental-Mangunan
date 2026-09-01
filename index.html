@@ -173,12 +173,12 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
   .bn-side-top .mapel-badge{
-    display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-size:10.5px;line-height:1.25;
+    display:inline-flex;align-items:flex-start;gap:4px;margin-top:5px;font-size:10.5px;line-height:1.25;
     background:rgba(217,164,65,0.15);color:var(--gold);border:1px solid rgba(217,164,65,0.38);
-    padding:3px 7px;border-radius:5px;font-weight:600;max-width:100%;
+    padding:3px 7px;border-radius:5px;font-weight:600;max-width:100%;width:fit-content;
   }
-  .bn-side-top .mapel-badge svg{flex:none;width:10px;height:10px;opacity:.9;}
-  .bn-side-top .mapel-badge span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .bn-side-top .mapel-badge svg{flex:none;width:10px;height:10px;opacity:.9;margin-top:1px;}
+  .bn-side-top .mapel-badge span{white-space:normal;word-break:break-word;line-height:1.35;}
   .bn-nav{display:flex;flex-direction:column;gap:2px;flex:1;}
   .bn-nav button{
     text-align:left;padding:10px 12px;border-radius:4px;background:transparent;color:#E4E7FA;
