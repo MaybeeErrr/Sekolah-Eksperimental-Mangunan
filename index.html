@@ -298,6 +298,38 @@
   .bn-stat .n{font-family:'Fraunces',serif;font-size:27px;font-weight:600;color:var(--green-dark);line-height:1;}
   .bn-stat .l{font-size:11.5px;color:var(--ink-soft);margin-top:6px;}
 
+  /* ---------- DASHBOARD PERBANDINGAN KELAS ---------- */
+  .bn-dash-hero{
+    background:linear-gradient(135deg,var(--green) 0%,var(--green-dark) 100%);
+    border:none;color:#F4F1E4;position:relative;overflow:hidden;
+  }
+  .bn-dash-hero::after{
+    content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;
+    border-radius:50%;border:1px dashed rgba(239,233,216,0.2);
+  }
+  .bn-dash-hero-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;position:relative;z-index:1;}
+  .bn-dash-eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:11px;font-weight:600;color:var(--gold);margin-bottom:6px;}
+  .bn-dash-hero h2{font-size:21px;color:#FBF8EF;}
+  .bn-dash-hero .desc{color:#D3D7F2;margin-top:5px;}
+  .bn-dash-hero .bn-pill-btn.outline{border-color:rgba(239,233,216,0.4);color:#FBF8EF;}
+  .bn-dash-hero .bn-pill-btn.outline:hover{background:rgba(255,255,255,0.1);}
+  .bn-dash-bar-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);}
+  .bn-dash-bar-row:last-child{border-bottom:none;}
+  .bn-dash-bar-rank{width:18px;flex:none;font-size:11px;color:var(--ink-soft);text-align:center;}
+  .bn-dash-bar-label{
+    width:112px;flex:none;font-weight:600;font-size:13px;color:var(--green-dark);
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:5px;
+  }
+  .bn-dash-bar-track{flex:1;height:14px;background:var(--paper-deep);border-radius:999px;overflow:hidden;}
+  .bn-dash-bar-fill{
+    height:100%;border-radius:999px;min-width:3px;
+    background:linear-gradient(90deg,var(--green-mid),var(--green));
+    transition:width .5s ease;
+  }
+  .bn-dash-bar-fill.top{background:linear-gradient(90deg,var(--gold),var(--gold-dark));}
+  .bn-dash-bar-val{width:44px;flex:none;text-align:right;font-size:13px;font-weight:600;color:var(--ink);}
+  .bn-dash-crown{color:var(--gold-dark);font-size:11px;}
+
   /* ---------- PERINGKAT ---------- */
   .bn-rank{
     display:inline-flex;align-items:center;justify-content:center;width:23px;height:23px;flex:none;
@@ -368,6 +400,9 @@
     .bn-pill-btn, .bn-btn.sm{padding:7px 11px;font-size:12px;}
     .bn-tpl-item, .bn-tpl-add{flex:1 1 100%;max-width:none;}
     .bn-tpl-section{padding:13px 12px 3px;}
+    .bn-dash-hero-row{flex-direction:column;align-items:flex-start;}
+    .bn-dash-bar-label{width:72px;font-size:11.5px;}
+    .bn-dash-bar-val{width:34px;font-size:12px;}
   }
 </style>
 
@@ -476,6 +511,7 @@
           </div>
         </div>
         <nav class="bn-nav">
+          <button data-view="dashboard"><span class="dot"></span>Dashboard</button>
           <button data-view="siswa" class="active"><span class="dot"></span>Kelola Siswa</button>
           <button data-view="nilai"><span class="dot"></span>Input Nilai</button>
           <button data-view="peringkat"><span class="dot"></span>Peringkat</button>
@@ -493,6 +529,42 @@
 
       <main class="bn-main">
         <div class="bn-main-inner">
+
+          <!-- DASHBOARD -->
+          <div class="bn-page hidden" id="bn-page-dashboard">
+            <div class="bn-panel bn-dash-hero">
+              <div class="bn-dash-hero-row">
+                <div>
+                  <div class="bn-dash-eyebrow">Ringkasan Sekolah</div>
+                  <h2>Dashboard Perbandingan Kelas</h2>
+                  <div class="desc">Pantau performa tiap kelas dan bandingkan rata-rata nilainya sekilas pandang.</div>
+                </div>
+                <button type="button" class="bn-pill-btn outline" id="bn-muat-dashboard">Perbarui data</button>
+              </div>
+            </div>
+
+            <div class="bn-stats" id="bn-dash-stats"></div>
+
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Perbandingan Rata-rata Antar Kelas</h2>
+                  <div class="desc">Diurutkan dari rata-rata tertinggi ke terendah, dihitung dari seluruh mata pelajaran yang sudah dinilai.</div>
+                </div>
+              </div>
+              <div id="bn-dash-chart"></div>
+            </div>
+
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Rincian per Kelas</h2>
+                  <div class="desc">Jumlah siswa, cakupan penilaian, serta rentang nilai tertinggi dan terendah tiap kelas.</div>
+                </div>
+              </div>
+              <div id="bn-dash-table"></div>
+            </div>
+          </div>
 
           <!-- SISWA -->
           <div class="bn-page" id="bn-page-siswa">
@@ -522,6 +594,7 @@
                   <div class="bn-field" style="min-width:140px;">
                     <select id="bn-siswa-filter-kelas"></select>
                   </div>
+                  <button type="button" class="bn-pill-btn danger" id="bn-hapus-semua-siswa" style="align-self:center;">Hapus semua siswa</button>
                 </div>
               </div>
               <div id="bn-siswa-list"></div>
@@ -1055,9 +1128,10 @@
   });
   function switchPage(name){
     qsa('.bn-nav button').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-view') === name); });
-    ['siswa','nilai','rapot','peringkat','akun','template'].forEach(function(p){
+    ['dashboard','siswa','nilai','rapot','peringkat','akun','template'].forEach(function(p){
       qs('#bn-page-' + p).classList.toggle('hidden', p !== name);
     });
+    if(name === 'dashboard') renderDashboard();
     if(name === 'nilai'){ updateNilaiDesc(); renderNilaiTable(); }
     if(name === 'rapot') renderRapotTable();
     if(name === 'peringkat') renderPeringkat();
@@ -1236,6 +1310,18 @@
       });
     });
   }
+
+  qs('#bn-hapus-semua-siswa').addEventListener('click', function(){
+    if(state.siswa.length === 0){ toast('Belum ada data siswa untuk dihapus.'); return; }
+    if(!window.confirm('Hapus SEMUA data siswa (' + state.siswa.length + ' siswa dari seluruh kelas)? Tindakan ini tidak bisa dibatalkan.')) return;
+    state.siswa = [];
+    sSet('bn-siswa-master', state.siswa, true).then(function(){
+      populateKelasDropdowns();
+      renderSiswaList();
+      updateStatCards();
+      toast('Semua data siswa telah dihapus.');
+    });
+  });
 
   // ---------- NILAI PAGE ----------
   function nilaiKey(kelas, mapelSlug){ return 'bn-nilai__' + slugify(kelas) + '__' + mapelSlug; }
@@ -1953,6 +2039,84 @@
     kelasKeys.forEach(function(k){ perKelas[k] = byKelas[k].slice().sort(sortFn).slice(0, 10); });
     return {overall: overall, perKelas: perKelas, kelasKeys: kelasKeys};
   }
+
+  // ---------- DASHBOARD PERBANDINGAN KELAS ----------
+  function renderDashboard(){
+    var statsBox = qs('#bn-dash-stats');
+    var chartBox = qs('#bn-dash-chart');
+    var tableBox = qs('#bn-dash-table');
+    if(!statsBox || !chartBox || !tableBox) return;
+    chartBox.innerHTML = '<div class="bn-empty">Menyusun perbandingan kelas\u2026</div>';
+    tableBox.innerHTML = '';
+    computeSemuaNilai().then(function(all){
+      var kelasList = distinctKelas();
+      var totalSiswa = state.siswa.length;
+
+      var perKelas = kelasList.map(function(k){
+        var siswaKelas = state.siswa.filter(function(s){ return s.kelas === k; });
+        var nilaiKelas = all.filter(function(r){ return r.kelas === k; });
+        var avg = nilaiKelas.length ? Math.round((nilaiKelas.reduce(function(sum,r){ return sum + r.rata; }, 0) / nilaiKelas.length) * 10) / 10 : null;
+        var max = nilaiKelas.length ? Math.max.apply(null, nilaiKelas.map(function(r){ return r.rata; })) : null;
+        var min = nilaiKelas.length ? Math.min.apply(null, nilaiKelas.map(function(r){ return r.rata; })) : null;
+        return {kelas:k, jumlahSiswa: siswaKelas.length, dinilai: nilaiKelas.length, avg:avg, max:max, min:min};
+      });
+
+      var sorted = perKelas.slice().sort(function(a,b){
+        if(a.avg === null && b.avg === null) return a.kelas.localeCompare(b.kelas);
+        if(a.avg === null) return 1;
+        if(b.avg === null) return -1;
+        return b.avg - a.avg;
+      });
+
+      var withAvg = sorted.filter(function(r){ return r.avg !== null; });
+      var topKelas = withAvg.length ? withAvg[0] : null;
+      var overallAvg = withAvg.length ? Math.round((withAvg.reduce(function(sum,r){ return sum + r.avg; }, 0) / withAvg.length) * 10) / 10 : null;
+
+      var statCards = [
+        {n: totalSiswa, l: 'Total siswa'},
+        {n: kelasList.length, l: 'Jumlah kelas'},
+        {n: overallAvg !== null ? overallAvg : '\u2013', l: 'Rata-rata sekolah'},
+        {n: topKelas ? topKelas.kelas : '\u2013', l: 'Kelas dengan performa terbaik'}
+      ];
+      statsBox.innerHTML = statCards.map(function(s){
+        return '<div class="bn-stat"><div class="n num">' + escapeHtml(String(s.n)) + '</div><div class="l">' + s.l + '</div></div>';
+      }).join('');
+
+      if(sorted.length === 0){
+        chartBox.innerHTML = '<div class="bn-empty">Belum ada data kelas. Tambahkan siswa terlebih dahulu di menu <b>Kelola Siswa</b>.</div>';
+        tableBox.innerHTML = '<div class="bn-empty">Belum ada kelas untuk dibandingkan.</div>';
+        return;
+      }
+
+      var maxAvg = withAvg.length ? Math.max.apply(null, withAvg.map(function(r){ return r.avg; })) : 100;
+      chartBox.innerHTML = sorted.map(function(r, i){
+        var isTop = topKelas && r.kelas === topKelas.kelas;
+        var pct = r.avg !== null ? Math.max(4, Math.round((r.avg / (maxAvg || 100)) * 100)) : 0;
+        return '<div class="bn-dash-bar-row">' +
+          '<div class="bn-dash-bar-rank num">' + (i + 1) + '</div>' +
+          '<div class="bn-dash-bar-label">' + escapeHtml(r.kelas) + (isTop ? ' <span class="bn-dash-crown">\u2605</span>' : '') + '</div>' +
+          '<div class="bn-dash-bar-track"><div class="bn-dash-bar-fill' + (isTop ? ' top' : '') + '" style="width:' + pct + '%"></div></div>' +
+          '<div class="bn-dash-bar-val num">' + (r.avg !== null ? r.avg : '\u2013') + '</div>' +
+        '</div>';
+      }).join('');
+
+      var html = '<table class="bn-table"><thead><tr><th>Kelas</th><th>Jumlah Siswa</th><th>Sudah Dinilai</th><th>Rata-rata</th><th>Tertinggi</th><th>Terendah</th><th>Predikat</th></tr></thead><tbody>';
+      sorted.forEach(function(r){
+        var p = r.avg !== null ? predikatFor(r.avg) : null;
+        html += '<tr><td>' + escapeHtml(r.kelas) + '</td>' +
+          '<td class="num">' + r.jumlahSiswa + '</td>' +
+          '<td class="num">' + r.dinilai + '</td>' +
+          '<td class="num">' + (r.avg !== null ? r.avg : '-') + '</td>' +
+          '<td class="num">' + (r.max !== null ? r.max : '-') + '</td>' +
+          '<td class="num">' + (r.min !== null ? r.min : '-') + '</td>' +
+          '<td>' + (p ? predikatBadge(p) : '-') + '</td></tr>';
+      });
+      html += '</tbody></table>';
+      tableBox.innerHTML = html;
+    });
+  }
+
+  qs('#bn-muat-dashboard').addEventListener('click', renderDashboard);
 
   function renderPeringkat(){
     var body = qs('#bn-peringkat-body');
