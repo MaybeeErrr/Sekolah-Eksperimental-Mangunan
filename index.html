@@ -252,6 +252,36 @@
   }
   .bn-file-drop b{color:var(--green-dark);}
   .bn-mini{font-size:11.5px;color:var(--ink-soft);}
+
+  /* ---------- TEMPLATE DOKUMEN ---------- */
+  .bn-tpl-list{display:flex;flex-wrap:wrap;gap:10px;margin-top:2px;}
+  .bn-tpl-item{
+    position:relative;flex:1 1 220px;max-width:280px;
+    border:1.5px solid var(--line);border-radius:var(--radius);
+    padding:12px 12px 10px;cursor:pointer;background:#FBF9F1;
+    transition:border-color .15s,box-shadow .15s,background .15s;
+  }
+  .bn-tpl-item:hover{border-color:var(--green-mid);}
+  .bn-tpl-item.active{border-color:var(--green);background:var(--white);box-shadow:0 0 0 1px var(--green);}
+  .bn-tpl-item-top{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+  .bn-tpl-swatch{width:15px;height:15px;border-radius:4px;flex:none;border:1px solid rgba(0,0,0,0.1);}
+  .bn-tpl-item-name{font-weight:600;font-size:13px;color:var(--ink);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .bn-tpl-badge{font-size:10px;font-weight:600;color:var(--ok);background:#E3EEE6;padding:2px 7px;border-radius:999px;flex:none;}
+  .bn-tpl-item-desc{font-size:11.5px;color:var(--ink-soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:9px;min-height:15px;}
+  .bn-tpl-item-actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .bn-tpl-item-actions button{font-size:10.5px;padding:4px 8px;border-radius:4px;background:transparent;border:1px solid var(--line);color:var(--ink-soft);}
+  .bn-tpl-item-actions button:hover{background:var(--paper-deep);color:var(--ink);}
+  .bn-tpl-item-actions button.danger{color:var(--red);}
+  .bn-tpl-item-actions button.danger:hover{background:#F6E6E1;}
+  .bn-tpl-add{
+    flex:1 1 220px;max-width:280px;min-height:74px;
+    border:1.5px dashed var(--line);border-radius:var(--radius);
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    color:var(--ink-soft);font-size:12.5px;font-weight:500;background:transparent;
+  }
+  .bn-tpl-add:hover{border-color:var(--green-mid);color:var(--green-dark);background:#FBF9F1;}
+  .bn-tpl-section{border:1px solid var(--line);border-radius:var(--radius);padding:15px 16px 3px;margin-bottom:16px;background:#FBF9F1;}
+  .bn-tpl-section-title{font-size:11px;font-weight:600;color:var(--green-dark);text-transform:uppercase;letter-spacing:.04em;margin-bottom:12px;}
   @keyframes bn-page-in{
     from{opacity:0;transform:translateY(7px);}
     to{opacity:1;transform:translateY(0);}
@@ -336,6 +366,8 @@
     table.bn-table input[type=number]{width:52px;padding:4px 5px;}
     .bn-actions{gap:6px;}
     .bn-pill-btn, .bn-btn.sm{padding:7px 11px;font-size:12px;}
+    .bn-tpl-item, .bn-tpl-add{flex:1 1 100%;max-width:none;}
+    .bn-tpl-section{padding:13px 12px 3px;}
   }
 </style>
 
@@ -623,60 +655,88 @@
 
           <!-- TEMPLATE DOKUMEN -->
           <div class="bn-page hidden" id="bn-page-template">
+
             <div class="bn-panel">
               <div class="bn-panel-head">
                 <div>
-                  <h2>Template dokumen rapor</h2>
-                  <div class="desc">Atur tampilan berkas PDF rapor yang diunduh dari menu Rekap &amp; Rapor. Perubahan berlaku untuk semua guru dan wali kelas.</div>
+                  <h2>Koleksi template</h2>
+                  <div class="desc">Simpan beberapa desain rapor, buat template baru, atau impor berkas template (.json) milik sendiri. Template bertanda <b>Aktif</b> yang dipakai saat mengunduh rapor di menu Rekap &amp; Rapor.</div>
                 </div>
-              </div>
-
-              <div class="bn-row">
-                <div class="bn-field">
-                  <label for="bn-tpl-judul">Judul dokumen</label>
-                  <input id="bn-tpl-judul" type="text" placeholder="LAPORAN HASIL BELAJAR SISWA">
-                </div>
-                <div class="bn-field" style="max-width:110px;">
-                  <label for="bn-tpl-warna">Warna aksen</label>
-                  <input id="bn-tpl-warna" type="color" style="padding:2px;height:37px;">
-                </div>
-              </div>
-
-              <div class="bn-row">
-                <div class="bn-field" style="max-width:240px;">
-                  <label>Logo sekolah</label>
-                  <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:#FCFAF4;cursor:pointer;">
-                    <input id="bn-tpl-logo" type="checkbox" style="width:auto;">
-                    <span style="font-size:12.5px;">Tampilkan di kop dokumen</span>
+                <div class="bn-actions">
+                  <label class="bn-pill-btn outline sm" style="cursor:pointer;">
+                    Impor template
+                    <input type="file" id="bn-tpl-file" accept=".json,application/json" class="hidden">
                   </label>
                 </div>
-                <div class="bn-field" style="max-width:260px;">
-                  <label for="bn-tpl-posisi-wali">Posisi tanda tangan wali kelas</label>
-                  <select id="bn-tpl-posisi-wali">
-                    <option value="kiri">Kiri (kepala sekolah di kanan)</option>
-                    <option value="kanan">Kanan (kepala sekolah di kiri)</option>
-                  </select>
+              </div>
+              <div class="bn-tpl-list" id="bn-tpl-list"></div>
+              <button type="button" class="bn-tpl-add" id="bn-tpl-baru" style="margin-top:10px;">+ Buat template baru</button>
+            </div>
+
+            <div class="bn-panel">
+              <div class="bn-panel-head">
+                <div>
+                  <h2>Sunting template</h2>
+                  <div class="desc">Perubahan berlaku untuk semua guru dan wali kelas setelah disimpan.</div>
                 </div>
               </div>
 
               <div class="bn-field">
-                <label for="bn-tpl-pembuka">Teks pengantar (opsional, tampil di bawah kop sebelum tabel nilai)</label>
-                <textarea id="bn-tpl-pembuka" rows="2" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:#FCFAF4;resize:vertical;font-family:inherit;font-size:13px;"></textarea>
+                <label for="bn-tpl-nama">Nama template</label>
+                <input id="bn-tpl-nama" type="text" placeholder="Contoh: Template Rapor Semester Ganjil">
               </div>
 
-              <div class="bn-field">
-                <label for="bn-tpl-label-catatan">Label bagian catatan</label>
-                <input id="bn-tpl-label-catatan" type="text" placeholder="Catatan Wali Kelas:">
+              <div class="bn-tpl-section">
+                <div class="bn-tpl-section-title">Kop &amp; identitas dokumen</div>
+                <div class="bn-row">
+                  <div class="bn-field">
+                    <label for="bn-tpl-judul">Judul dokumen</label>
+                    <input id="bn-tpl-judul" type="text" placeholder="LAPORAN HASIL BELAJAR SISWA">
+                  </div>
+                  <div class="bn-field" style="max-width:110px;">
+                    <label for="bn-tpl-warna">Warna aksen</label>
+                    <input id="bn-tpl-warna" type="color" style="padding:2px;height:37px;">
+                  </div>
+                </div>
+                <div class="bn-row">
+                  <div class="bn-field" style="max-width:240px;">
+                    <label>Logo sekolah</label>
+                    <label style="display:flex;align-items:center;gap:8px;padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:var(--white);cursor:pointer;">
+                      <input id="bn-tpl-logo" type="checkbox" style="width:auto;">
+                      <span style="font-size:12.5px;">Tampilkan di kop dokumen</span>
+                    </label>
+                  </div>
+                  <div class="bn-field" style="max-width:260px;">
+                    <label for="bn-tpl-posisi-wali">Posisi tanda tangan wali kelas</label>
+                    <select id="bn-tpl-posisi-wali" style="background:var(--white);">
+                      <option value="kiri">Kiri (kepala sekolah di kanan)</option>
+                      <option value="kanan">Kanan (kepala sekolah di kiri)</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <div class="bn-field">
-                <label for="bn-tpl-penutup">Teks penutup (opsional, tampil di bawah catatan wali kelas)</label>
-                <textarea id="bn-tpl-penutup" rows="2" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:#FCFAF4;resize:vertical;font-family:inherit;font-size:13px;"></textarea>
+              <div class="bn-tpl-section">
+                <div class="bn-tpl-section-title">Teks tambahan</div>
+                <div class="bn-field">
+                  <label for="bn-tpl-pembuka">Teks pengantar (opsional, tampil di bawah kop sebelum tabel nilai)</label>
+                  <textarea id="bn-tpl-pembuka" rows="2" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:var(--white);resize:vertical;font-family:inherit;font-size:13px;"></textarea>
+                </div>
+                <div class="bn-field">
+                  <label for="bn-tpl-label-catatan">Label bagian catatan</label>
+                  <input id="bn-tpl-label-catatan" type="text" placeholder="Catatan Wali Kelas:" style="background:var(--white);">
+                </div>
+                <div class="bn-field">
+                  <label for="bn-tpl-penutup">Teks penutup (opsional, tampil di bawah catatan wali kelas)</label>
+                  <textarea id="bn-tpl-penutup" rows="2" style="width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:4px;background:var(--white);resize:vertical;font-family:inherit;font-size:13px;"></textarea>
+                </div>
               </div>
 
               <div class="bn-actions">
                 <button class="bn-btn sm" id="bn-simpan-template">Simpan template</button>
                 <button class="bn-pill-btn outline" id="bn-preview-template">Unduh pratinjau PDF</button>
+                <button class="bn-pill-btn outline" id="bn-ekspor-template">Ekspor (.json)</button>
+                <button class="bn-pill-btn danger" id="bn-hapus-template">Hapus template</button>
                 <span class="bn-mini" id="bn-template-status" style="align-self:center;"></span>
               </div>
               <div class="bn-mini" style="margin-top:10px;">Pratinjau menggunakan data contoh dan tidak memengaruhi data siswa yang sebenarnya.</div>
@@ -767,7 +827,8 @@
     guruList: [],
     siswa: [],
     settings: {namaSekolah:'SD Eksperimental Mangunan', kepsek:'', kota:'', tahunAjaran:'2026/2027', semester:'Ganjil', bobot:{harian:30, uts:30, uas:40}},
-    templateSettings: {judul:'LAPORAN HASIL BELAJAR SISWA', warnaAksen:'#2D2E86', tampilkanLogo:false, teksPembuka:'', labelCatatan:'Catatan Wali Kelas:', teksPenutup:'', posisiWali:'kiri'},
+    templates: [],          // daftar template rapor: [{id, nama, settings}]
+    templateActiveId: null, // id template yang sedang dipakai untuk cetak rapor
     kelasSiswaFilter: '',
     kelasNilai: '',
     kelasRapot: '',
@@ -1506,36 +1567,226 @@
   });
 
   // ---------- TEMPLATE DOKUMEN ----------
-  function liveTemplateSettings(){
-    var el = qs('#bn-tpl-judul');
-    if(!el) return state.templateSettings;
+  function defaultTemplateSettings(){
+    return {judul:'LAPORAN HASIL BELAJAR SISWA', warnaAksen:'#2D2E86', tampilkanLogo:false, teksPembuka:'', labelCatatan:'Catatan Wali Kelas:', teksPenutup:'', posisiWali:'kiri'};
+  }
+  function genTplId(){
+    return 'tpl-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2,7);
+  }
+  function slugifyTplName(s){
+    return String(s || '').toLowerCase().trim().replace(/[^a-z0-9]+/g,'-').replace(/(^-+|-+$)/g,'') || 'template';
+  }
+  function sanitizeTemplateSettings(s){
+    s = s || {};
     return {
-      judul: qs('#bn-tpl-judul').value.trim() || 'LAPORAN HASIL BELAJAR SISWA',
-      warnaAksen: qs('#bn-tpl-warna').value || '#2D2E86',
-      tampilkanLogo: qs('#bn-tpl-logo').checked,
-      teksPembuka: qs('#bn-tpl-pembuka').value.trim(),
-      labelCatatan: qs('#bn-tpl-label-catatan').value.trim() || 'Catatan Wali Kelas:',
-      teksPenutup: qs('#bn-tpl-penutup').value.trim(),
-      posisiWali: qs('#bn-tpl-posisi-wali').value === 'kanan' ? 'kanan' : 'kiri'
+      judul: (s.judul || '').toString().trim() || 'LAPORAN HASIL BELAJAR SISWA',
+      warnaAksen: /^#[0-9a-fA-F]{6}$/.test(s.warnaAksen || '') ? s.warnaAksen : '#2D2E86',
+      tampilkanLogo: !!s.tampilkanLogo,
+      teksPembuka: (s.teksPembuka || '').toString(),
+      labelCatatan: (s.labelCatatan || '').toString().trim() || 'Catatan Wali Kelas:',
+      teksPenutup: (s.teksPenutup || '').toString(),
+      posisiWali: s.posisiWali === 'kanan' ? 'kanan' : 'kiri'
     };
   }
-  function fillTemplateFields(){
-    var t = state.templateSettings;
-    qs('#bn-tpl-judul').value = t.judul || 'LAPORAN HASIL BELAJAR SISWA';
-    qs('#bn-tpl-warna').value = t.warnaAksen || '#2D2E86';
-    qs('#bn-tpl-logo').checked = !!t.tampilkanLogo;
-    qs('#bn-tpl-pembuka').value = t.teksPembuka || '';
-    qs('#bn-tpl-label-catatan').value = t.labelCatatan || 'Catatan Wali Kelas:';
-    qs('#bn-tpl-penutup').value = t.teksPenutup || '';
-    qs('#bn-tpl-posisi-wali').value = t.posisiWali || 'kiri';
+  function getActiveTemplateObj(){
+    return state.templates.find(function(t){ return t.id === state.templateActiveId; }) || state.templates[0] || null;
   }
+  function liveTemplateSettings(){
+    var el = qs('#bn-tpl-judul');
+    if(!el){
+      var active = getActiveTemplateObj();
+      return sanitizeTemplateSettings(active ? active.settings : null);
+    }
+    return sanitizeTemplateSettings({
+      judul: qs('#bn-tpl-judul').value,
+      warnaAksen: qs('#bn-tpl-warna').value,
+      tampilkanLogo: qs('#bn-tpl-logo').checked,
+      teksPembuka: qs('#bn-tpl-pembuka').value,
+      labelCatatan: qs('#bn-tpl-label-catatan').value,
+      teksPenutup: qs('#bn-tpl-penutup').value,
+      posisiWali: qs('#bn-tpl-posisi-wali').value
+    });
+  }
+  function fillTemplateFields(settings, nama){
+    var t = sanitizeTemplateSettings(settings);
+    qs('#bn-tpl-nama').value = nama || '';
+    qs('#bn-tpl-judul').value = t.judul;
+    qs('#bn-tpl-warna').value = t.warnaAksen;
+    qs('#bn-tpl-logo').checked = t.tampilkanLogo;
+    qs('#bn-tpl-pembuka').value = t.teksPembuka;
+    qs('#bn-tpl-label-catatan').value = t.labelCatatan;
+    qs('#bn-tpl-penutup').value = t.teksPenutup;
+    qs('#bn-tpl-posisi-wali').value = t.posisiWali;
+    qs('#bn-template-status').textContent = '';
+  }
+  function persistTemplates(){
+    return Promise.all([
+      sSet('bn-templates', state.templates, true),
+      sSet('bn-template-aktif-id', state.templateActiveId, true)
+    ]);
+  }
+  function renderTemplateList(){
+    var wrap = qs('#bn-tpl-list');
+    if(!wrap) return;
+    wrap.innerHTML = state.templates.map(function(t){
+      var isActive = t.id === state.templateActiveId;
+      var s = sanitizeTemplateSettings(t.settings);
+      return '<div class="bn-tpl-item' + (isActive ? ' active' : '') + '" data-id="' + escapeHtml(t.id) + '">' +
+          '<div class="bn-tpl-item-top">' +
+            '<span class="bn-tpl-swatch" style="background:' + escapeHtml(s.warnaAksen) + ';"></span>' +
+            '<span class="bn-tpl-item-name">' + escapeHtml(t.nama || 'Tanpa nama') + '</span>' +
+            (isActive ? '<span class="bn-tpl-badge">Aktif</span>' : '') +
+          '</div>' +
+          '<div class="bn-tpl-item-desc">' + escapeHtml(s.judul) + '</div>' +
+          '<div class="bn-tpl-item-actions">' +
+            (isActive ? '' : '<button type="button" data-act="pilih">Jadikan aktif</button>') +
+            '<button type="button" data-act="gandakan">Gandakan</button>' +
+            '<button type="button" data-act="ekspor">Ekspor</button>' +
+            (state.templates.length > 1 ? '<button type="button" class="danger" data-act="hapus">Hapus</button>' : '') +
+          '</div>' +
+        '</div>';
+    }).join('');
+  }
+  function selectTemplate(id, opts){
+    opts = opts || {};
+    var t = state.templates.find(function(x){ return x.id === id; });
+    if(!t) return;
+    state.templateActiveId = id;
+    fillTemplateFields(t.settings, t.nama);
+    renderTemplateList();
+    if(!opts.silent) persistTemplates();
+  }
+  function exportTemplate(t){
+    var payload = {
+      jenis: 'template-rapor-buku-nilai',
+      versi: 1,
+      nama: t.nama || 'Template',
+      settings: sanitizeTemplateSettings(t.settings)
+    };
+    var blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'template-rapor-' + slugifyTplName(t.nama) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    toast('Template "' + (t.nama || 'ini') + '" diekspor sebagai berkas .json.');
+  }
+
+  qs('#bn-tpl-list').addEventListener('click', function(ev){
+    var item = ev.target.closest('.bn-tpl-item');
+    if(!item) return;
+    var id = item.getAttribute('data-id');
+    var actBtn = ev.target.closest('button[data-act]');
+    var t = state.templates.find(function(x){ return x.id === id; });
+    if(!t) return;
+    if(actBtn){
+      ev.stopPropagation();
+      var act = actBtn.getAttribute('data-act');
+      if(act === 'pilih'){
+        selectTemplate(id);
+      } else if(act === 'gandakan'){
+        var isLive = id === state.templateActiveId;
+        var copy = {
+          id: genTplId(),
+          nama: (t.nama || 'Template') + ' (salinan)',
+          settings: isLive ? liveTemplateSettings() : sanitizeTemplateSettings(t.settings)
+        };
+        state.templates.push(copy);
+        selectTemplate(copy.id);
+        toast('Template digandakan menjadi "' + copy.nama + '".');
+      } else if(act === 'ekspor'){
+        var isLiveExport = id === state.templateActiveId;
+        exportTemplate({
+          nama: isLiveExport ? (qs('#bn-tpl-nama').value.trim() || t.nama) : t.nama,
+          settings: isLiveExport ? liveTemplateSettings() : t.settings
+        });
+      } else if(act === 'hapus'){
+        if(state.templates.length <= 1){ toast('Tidak bisa menghapus satu-satunya template.'); return; }
+        if(!window.confirm('Hapus template "' + (t.nama || 'ini') + '"? Tindakan ini tidak bisa dibatalkan.')) return;
+        state.templates = state.templates.filter(function(x){ return x.id !== id; });
+        if(state.templateActiveId === id){
+          selectTemplate(state.templates[0].id);
+        } else {
+          renderTemplateList();
+          persistTemplates();
+        }
+        toast('Template dihapus.');
+      }
+      return;
+    }
+    if(id !== state.templateActiveId) selectTemplate(id);
+  });
+
+  qs('#bn-tpl-baru').addEventListener('click', function(){
+    var jumlah = state.templates.length + 1;
+    var t = {id: genTplId(), nama: 'Template baru ' + jumlah, settings: defaultTemplateSettings()};
+    state.templates.push(t);
+    selectTemplate(t.id);
+    var namaEl = qs('#bn-tpl-nama');
+    namaEl.focus();
+    namaEl.select();
+    toast('Template baru dibuat. Beri nama lalu atur tampilannya di bawah.');
+  });
+
+  qs('#bn-tpl-file').addEventListener('change', function(ev){
+    var file = ev.target.files && ev.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var parsed;
+      try{ parsed = JSON.parse(String(reader.result)); }
+      catch(e){ toast('Gagal mengimpor: berkas bukan JSON yang valid.'); ev.target.value=''; return; }
+      var settingsSrc = (parsed && typeof parsed === 'object' && parsed.settings && typeof parsed.settings === 'object') ? parsed.settings : parsed;
+      if(!settingsSrc || typeof settingsSrc !== 'object'){
+        toast('Gagal mengimpor: format template tidak dikenali.');
+        ev.target.value = '';
+        return;
+      }
+      var namaImpor = (parsed && parsed.nama) ? String(parsed.nama) : file.name.replace(/\.json$/i,'');
+      var t = {id: genTplId(), nama: namaImpor || 'Template impor', settings: sanitizeTemplateSettings(settingsSrc)};
+      state.templates.push(t);
+      selectTemplate(t.id);
+      toast('Template "' + t.nama + '" berhasil diimpor.');
+      ev.target.value = '';
+    };
+    reader.onerror = function(){ toast('Gagal membaca berkas.'); ev.target.value=''; };
+    reader.readAsText(file);
+  });
+
   qs('#bn-simpan-template').addEventListener('click', function(){
-    state.templateSettings = liveTemplateSettings();
-    sSet('bn-template-settings', state.templateSettings, true).then(function(){
+    var t = getActiveTemplateObj();
+    if(!t) return;
+    t.nama = qs('#bn-tpl-nama').value.trim() || t.nama || 'Template tanpa nama';
+    t.settings = liveTemplateSettings();
+    qs('#bn-tpl-nama').value = t.nama;
+    persistTemplates().then(function(){
       qs('#bn-template-status').textContent = 'Tersimpan \u00b7 ' + new Date().toLocaleTimeString('id-ID');
-      toast('Template dokumen rapor disimpan.');
+      toast('Template "' + t.nama + '" disimpan.');
+      renderTemplateList();
     });
   });
+
+  qs('#bn-ekspor-template').addEventListener('click', function(){
+    var t = getActiveTemplateObj();
+    exportTemplate({
+      nama: qs('#bn-tpl-nama').value.trim() || (t && t.nama) || 'Template',
+      settings: liveTemplateSettings()
+    });
+  });
+
+  qs('#bn-hapus-template').addEventListener('click', function(){
+    if(state.templates.length <= 1){ toast('Tidak bisa menghapus satu-satunya template.'); return; }
+    var t = getActiveTemplateObj();
+    if(!t) return;
+    if(!window.confirm('Hapus template "' + (t.nama || 'ini') + '"? Tindakan ini tidak bisa dibatalkan.')) return;
+    state.templates = state.templates.filter(function(x){ return x.id !== t.id; });
+    selectTemplate(state.templates[0].id);
+    toast('Template dihapus.');
+  });
+
   qs('#bn-preview-template').addEventListener('click', function(){
     var dummySiswa = {id:'preview', nama:'Contoh Siswa', nisn:'0012345678'};
     var dummyMapel = [
@@ -1987,14 +2238,33 @@
     sGet('bn-settings', true),
     sGet('bn-last-guru', false),
     fetch('/api/auth/me').then(function(r){ return r.json(); }).then(function(d){ return (d && d.guru) || null; }).catch(function(){ return null; }),
-    sGet('bn-template-settings', true)
+    sGet('bn-templates', true),
+    sGet('bn-template-aktif-id', true),
+    sGet('bn-template-settings', true) // format lama, dipakai untuk migrasi otomatis
   ]).then(function(res){
     state.guruList = res[0] || [];
     state.siswa = res[1] || [];
     state.settings = res[2] || state.settings;
     var lastGuru = res[3];
     var sesiAktif = res[4];
-    state.templateSettings = Object.assign({}, state.templateSettings, res[5] || {});
+    var templatesRaw = res[5];
+    var activeIdRaw = res[6];
+    var legacyTemplate = res[7];
+    var perluMigrasi = false;
+    if(Array.isArray(templatesRaw) && templatesRaw.length){
+      state.templates = templatesRaw.map(function(t){
+        return {id: (t && t.id) || genTplId(), nama: (t && t.nama) || 'Template', settings: sanitizeTemplateSettings(t && t.settings)};
+      });
+    } else if(legacyTemplate){
+      state.templates = [{id: 'default', nama: 'Template Utama', settings: sanitizeTemplateSettings(legacyTemplate)}];
+      perluMigrasi = true;
+    } else {
+      state.templates = [{id: 'default', nama: 'Template Utama', settings: defaultTemplateSettings()}];
+      perluMigrasi = true;
+    }
+    state.templateActiveId = (activeIdRaw && state.templates.some(function(t){ return t.id === activeIdRaw; }))
+      ? activeIdRaw
+      : state.templates[0].id;
     refreshGuruDropdown();
     if(lastGuru && state.guruList.some(function(g){ return g.id === lastGuru; })){
       qs('#bn-login-guru').value = lastGuru;
@@ -2006,7 +2276,8 @@
     qs('#bn-set-semester').value = state.settings.semester || 'Ganjil';
     fillBobotFields();
     updateNilaiDesc();
-    fillTemplateFields();
+    selectTemplate(state.templateActiveId, {silent:true});
+    if(perluMigrasi) persistTemplates();
     if(sesiAktif){
       state.guru = sesiAktif;
       enterDashboard();
