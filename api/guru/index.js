@@ -32,7 +32,7 @@ module.exports = async function handler(req, res) {
       const nama = (body.nama || '').trim();
       const mapel = (body.mapel || '').trim();
       const password = body.password || '';
-      const role = body.role === 'admin' ? 'admin' : 'guru';
+      const role = ['admin', 'wali_kelas'].indexOf(body.role) > -1 ? body.role : 'guru';
 
       if (!nama || !mapel) {
         return res.status(400).json({ error: 'Nama dan mata pelajaran wajib diisi.' });

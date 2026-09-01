@@ -236,6 +236,8 @@
   .bn-pill-btn.outline{background:transparent;border:1px solid var(--line);color:var(--green-dark);}
   .bn-pill-btn.danger{background:transparent;color:var(--red);}
   .bn-pill-btn.danger:hover{background:#F6E6E1;}
+  .bn-pill-btn.gold{background:var(--gold);color:#31260B;}
+  .bn-pill-btn.wali{background:var(--green-mid);color:#F4F1E4;}
   .bn-toast{
     position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
     background:var(--green-dark);color:#F4F1E4;padding:10px 18px;border-radius:5px;font-size:13px;
@@ -514,9 +516,9 @@
           <button data-view="dashboard"><span class="dot"></span>Dashboard</button>
           <button data-view="siswa" class="active"><span class="dot"></span>Kelola Siswa</button>
           <button data-view="nilai"><span class="dot"></span>Input Nilai</button>
-          <button data-view="peringkat"><span class="dot"></span>Peringkat</button>
-          <button data-view="rapot"><span class="dot"></span>Rekap &amp; Rapor</button>
-          <button data-view="template"><span class="dot"></span>Template Dokumen</button>
+          <button data-view="peringkat" id="bn-nav-peringkat" class="hidden"><span class="dot"></span>Peringkat</button>
+          <button data-view="rapot" id="bn-nav-rapot" class="hidden"><span class="dot"></span>Rekap &amp; Rapor</button>
+          <button data-view="template" id="bn-nav-template" class="hidden"><span class="dot"></span>Template Dokumen</button>
           <button data-view="akun" id="bn-nav-akun" class="hidden"><span class="dot"></span>Kelola Akun</button>
         </nav>
         <div class="bn-sidebar-bottom">
@@ -535,9 +537,9 @@
             <div class="bn-panel bn-dash-hero">
               <div class="bn-dash-hero-row">
                 <div>
-                  <div class="bn-dash-eyebrow">Ringkasan Sekolah</div>
+                  <div class="bn-dash-eyebrow" id="bn-dash-eyebrow">Ringkasan Sekolah</div>
                   <h2>Dashboard Perbandingan Kelas</h2>
-                  <div class="desc">Pantau performa tiap kelas dan bandingkan rata-rata nilainya sekilas pandang.</div>
+                  <div class="desc" id="bn-dash-desc">Pantau performa tiap kelas dan bandingkan rata-rata nilainya sekilas pandang.</div>
                 </div>
                 <button type="button" class="bn-pill-btn outline" id="bn-muat-dashboard">Perbarui data</button>
               </div>
@@ -822,7 +824,7 @@
               <div class="bn-panel-head">
                 <div>
                   <h2>Tambah akun</h2>
-                  <div class="desc">Buat akun guru baru, atau jadikan admin agar bisa mengelola akun lain.</div>
+                  <div class="desc">Buat akun guru baru. Peran <b>Guru mata pelajaran</b> hanya bisa mengisi &amp; melihat nilai mapelnya sendiri. Peran <b>Wali kelas</b> menambahkan akses ke menu Rekap &amp; Rapor, Peringkat, dan Template Dokumen (gabungan semua mapel). Peran <b>Admin</b> mendapat semua akses itu ditambah Kelola Akun.</div>
                 </div>
               </div>
               <form id="bn-form-akun">
@@ -861,6 +863,7 @@
                     <label for="bn-akun-role">Peran</label>
                     <select id="bn-akun-role">
                       <option value="guru">Guru mata pelajaran</option>
+                      <option value="wali_kelas">Wali kelas</option>
                       <option value="admin">Admin</option>
                     </select>
                   </div>
@@ -1099,7 +1102,18 @@
     qs('#bn-who').textContent = state.guru.nama;
     qs('#bn-avatar').textContent = initials(state.guru.nama);
     qs('#bn-mapel-badge').innerHTML = '<svg viewBox="0 0 20 20" fill="none"><path d="M3.5 5.2c0-.7.6-1.2 1.3-1.1 2 .3 4.2 1 5.2 2 1-1 3.2-1.7 5.2-2 .7-.1 1.3.4 1.3 1.1v9.1c0 .6-.5 1-1 1.1-2 .2-4.2.9-5.2 1.9a.6.6 0 0 1-.6 0c-1-1-3.2-1.7-5.2-1.9-.5-.1-1-.5-1-1.1V5.2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/><path d="M10 6.3v9.6" stroke="currentColor" stroke-width="1.3"/></svg><span>' + escapeHtml(state.guru.mapel) + '</span>';
+    var waliAtauAdmin = isWaliOrAdmin(state.guru);
     qs('#bn-nav-akun').classList.toggle('hidden', state.guru.role !== 'admin');
+    qs('#bn-nav-peringkat').classList.toggle('hidden', !waliAtauAdmin);
+    qs('#bn-nav-rapot').classList.toggle('hidden', !waliAtauAdmin);
+    qs('#bn-nav-template').classList.toggle('hidden', !waliAtauAdmin);
+    // Menu Rekap & Rapor, Peringkat, dan Template Dokumen menggabungkan nilai
+    // SEMUA mata pelajaran satu kelas -- karena itu hanya wali kelas/admin
+    // yang boleh membukanya. Data pendukungnya (pengaturan rapor & template)
+    // baru dimuat dari server sekarang, khusus untuk peran yang berhak.
+    if(waliAtauAdmin){
+      loadDataKhususWaliKelas();
+    }
     renderSiswaPage();
     populateKelasDropdowns();
     // Setelah masuk, menu langsung diarahkan ke "Input Nilai" karena halaman
@@ -1126,7 +1140,17 @@
   qsa('.bn-nav button').forEach(function(btn){
     btn.addEventListener('click', function(){ switchPage(btn.getAttribute('data-view')); });
   });
+  var HALAMAN_KHUSUS_WALI = {rapot:1, peringkat:1, template:1};
+  var HALAMAN_KHUSUS_ADMIN = {akun:1};
   function switchPage(name){
+    if(HALAMAN_KHUSUS_WALI[name] && !isWaliOrAdmin(state.guru)){
+      toast('Hanya wali kelas atau admin yang dapat membuka halaman ini.');
+      name = 'dashboard';
+    }
+    if(HALAMAN_KHUSUS_ADMIN[name] && (!state.guru || state.guru.role !== 'admin')){
+      toast('Hanya admin yang dapat membuka halaman ini.');
+      name = 'dashboard';
+    }
     qsa('.bn-nav button').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-view') === name); });
     ['dashboard','siswa','nilai','rapot','peringkat','akun','template'].forEach(function(p){
       qs('#bn-page-' + p).classList.toggle('hidden', p !== name);
@@ -1136,6 +1160,7 @@
     if(name === 'rapot') renderRapotTable();
     if(name === 'peringkat') renderPeringkat();
     if(name === 'akun') renderAkunPage();
+    if(name === 'template') renderTemplateList();
   }
 
   function distinctKelas(){
@@ -1466,7 +1491,10 @@
       return;
     }
     state.settings = Object.assign({}, state.settings, {bobot: {harian:h, uts:u, uas:a}});
-    sSet('bn-settings', state.settings, true).then(function(){
+    // Bobot nilai boleh diatur oleh guru mapel mana pun (dipakai untuk
+    // menghitung Nilai Akhir mapelnya sendiri), jadi disimpan terpisah dari
+    // data khusus wali kelas di kunci "bn-bobot-nilai".
+    sSet('bn-bobot-nilai', state.settings.bobot, true).then(function(){
       toast('Bobot nilai akhir disimpan.');
       updateNilaiDesc();
       renderNilaiTable();
@@ -1480,7 +1508,15 @@
       tahunAjaran: qs('#bn-set-tahun').value.trim() || '-',
       semester: qs('#bn-set-semester').value
     });
-    sSet('bn-settings', state.settings, true).then(function(){
+    // Kop/identitas rapor termasuk data khusus wali kelas & admin, disimpan
+    // di kunci "bn-rapor-settings" yang dilindungi di server (lihat api/kv).
+    sSet('bn-rapor-settings', {
+      namaSekolah: state.settings.namaSekolah,
+      kepsek: state.settings.kepsek,
+      kota: state.settings.kota,
+      tahunAjaran: state.settings.tahunAjaran,
+      semester: state.settings.semester
+    }, true).then(function(){
       toast('Pengaturan rapor disimpan.');
     });
   });
@@ -1989,11 +2025,17 @@
   }
 
   // ---------- PERINGKAT PAGE ----------
-  function computeSemuaNilai(){
+  // mapelSlugFilter: kalau diisi, hanya nilai mata pelajaran itu yang dihitung
+  // (dipakai guru mata pelajaran biasa). Kosongkan/undefined untuk menggabungkan
+  // nilai SEMUA mapel (dipakai wali kelas & admin di menu Peringkat/Rekap).
+  function computeSemuaNilai(mapelSlugFilter){
     var kelasList = distinctKelas();
     if(kelasList.length === 0) return Promise.resolve([]);
     return Promise.all(kelasList.map(function(kelas){
-      return sList('bn-nilai__' + slugify(kelas) + '__', true).then(function(keys){
+      var keysPromise = mapelSlugFilter
+        ? Promise.resolve([nilaiKey(kelas, mapelSlugFilter)])
+        : sList('bn-nilai__' + slugify(kelas) + '__', true);
+      return keysPromise.then(function(keys){
         if(keys.length === 0) return [];
         return Promise.all(keys.map(function(k){ return sGet(k, true); })).then(function(allData){
           var siswaKelas = state.siswa.filter(function(s){ return s.kelas === kelas; });
@@ -2046,9 +2088,20 @@
     var chartBox = qs('#bn-dash-chart');
     var tableBox = qs('#bn-dash-table');
     if(!statsBox || !chartBox || !tableBox) return;
+    // Guru mata pelajaran biasa hanya melihat & menghitung mapelnya sendiri;
+    // wali kelas & admin melihat gabungan semua mapel (dipakai untuk melihat
+    // performa kelas secara keseluruhan).
+    var guruBiasa = state.guru && !isWaliOrAdmin(state.guru);
+    var mapelFilter = guruBiasa ? state.guru.mapelSlug : undefined;
+    var eyebrow = qs('#bn-dash-eyebrow');
+    var desc = qs('#bn-dash-desc');
+    if(eyebrow) eyebrow.textContent = guruBiasa ? ('Ringkasan Mapel ' + state.guru.mapel) : 'Ringkasan Sekolah';
+    if(desc) desc.textContent = guruBiasa
+      ? 'Pantau performa tiap kelas khusus untuk mata pelajaran ' + state.guru.mapel + ' yang Anda ampu.'
+      : 'Pantau performa tiap kelas dan bandingkan rata-rata nilainya sekilas pandang (gabungan semua mata pelajaran).';
     chartBox.innerHTML = '<div class="bn-empty">Menyusun perbandingan kelas\u2026</div>';
     tableBox.innerHTML = '';
-    computeSemuaNilai().then(function(all){
+    computeSemuaNilai(mapelFilter).then(function(all){
       var kelasList = distinctKelas();
       var totalSiswa = state.siswa.length;
 
@@ -2075,7 +2128,7 @@
       var statCards = [
         {n: totalSiswa, l: 'Total siswa'},
         {n: kelasList.length, l: 'Jumlah kelas'},
-        {n: overallAvg !== null ? overallAvg : '\u2013', l: 'Rata-rata sekolah'},
+        {n: overallAvg !== null ? overallAvg : '\u2013', l: guruBiasa ? 'Rata-rata mapel Anda' : 'Rata-rata sekolah'},
         {n: topKelas ? topKelas.kelas : '\u2013', l: 'Kelas dengan performa terbaik'}
       ];
       statsBox.innerHTML = statCards.map(function(s){
@@ -2284,9 +2337,12 @@
 
   // ---------- AKUN PAGE (khusus admin) ----------
   function roleBadge(role){
-    var label = role === 'admin' ? 'Admin' : 'Guru';
-    var cls = role === 'admin' ? 'gold' : 'outline';
+    var label = role === 'admin' ? 'Admin' : (role === 'wali_kelas' ? 'Wali Kelas' : 'Guru mapel');
+    var cls = role === 'admin' ? 'gold' : (role === 'wali_kelas' ? 'wali' : 'outline');
     return '<span class="bn-pill-btn ' + cls + '" style="pointer-events:none;padding:2px 10px;font-size:12px;">' + label + '</span>';
+  }
+  function isWaliOrAdmin(guru){
+    return !!guru && (guru.role === 'admin' || guru.role === 'wali_kelas');
   }
 
   function renderAkunPage(){
@@ -2391,57 +2447,84 @@
     showDiag('Terjadi kesalahan: ' + (ev.message || 'tidak diketahui') + (ev.lineno ? (' (baris ' + ev.lineno + ')') : ''));
   });
 
+  // ---------- DATA KHUSUS WALI KELAS / ADMIN ----------
+  // Template rapor & kop/identitas rapor menggabungkan data lintas mapel,
+  // jadi kuncinya dilindungi di server (lihat api/kv) dan HANYA dimuat dari
+  // sini setelah login sebagai wali kelas/admin -- guru mapel biasa tidak
+  // pernah memanggil ini sama sekali (lihat enterDashboard()).
+  var waliDataLoaded = false;
+  function loadDataKhususWaliKelas(){
+    if(waliDataLoaded) return;
+    waliDataLoaded = true;
+    Promise.all([
+      sGet('bn-templates', true),
+      sGet('bn-template-aktif-id', true),
+      sGet('bn-template-settings', true), // format lama, dipakai untuk migrasi otomatis
+      sGet('bn-rapor-settings', true)
+    ]).then(function(res){
+      var templatesRaw = res[0];
+      var activeIdRaw = res[1];
+      var legacyTemplate = res[2];
+      var raporSettings = res[3];
+      var perluMigrasi = false;
+      if(Array.isArray(templatesRaw) && templatesRaw.length){
+        state.templates = templatesRaw.map(function(t){
+          return {id: (t && t.id) || genTplId(), nama: (t && t.nama) || 'Template', settings: sanitizeTemplateSettings(t && t.settings)};
+        });
+      } else if(legacyTemplate){
+        state.templates = [{id: 'default', nama: 'Template Utama', settings: sanitizeTemplateSettings(legacyTemplate)}];
+        perluMigrasi = true;
+      } else {
+        state.templates = [{id: 'default', nama: 'Template Utama', settings: defaultTemplateSettings()}];
+        perluMigrasi = true;
+      }
+      state.templateActiveId = (activeIdRaw && state.templates.some(function(t){ return t.id === activeIdRaw; }))
+        ? activeIdRaw
+        : state.templates[0].id;
+      if(raporSettings){
+        // Kunci baru sudah ada -> pakai ini (lebih baru dari fallback data lama).
+        state.settings = Object.assign({}, state.settings, raporSettings);
+      }
+      qs('#bn-set-sekolah').value = state.settings.namaSekolah || '';
+      qs('#bn-set-kepsek').value = state.settings.kepsek || '';
+      qs('#bn-set-kota').value = state.settings.kota || '';
+      qs('#bn-set-tahun').value = state.settings.tahunAjaran || '';
+      qs('#bn-set-semester').value = state.settings.semester || 'Ganjil';
+      selectTemplate(state.templateActiveId, {silent:true});
+      if(perluMigrasi) persistTemplates();
+    });
+  }
+
   // ---------- INIT ----------
   // Daftar guru diambil dari /api/guru (tanpa kata sandi -- itu hanya
   // diverifikasi di server saat login/daftar). Sesi yang masih aktif
   // (cookie bn_session) dicek lewat /api/auth/me agar refresh halaman
   // tidak perlu login ulang.
+  // Catatan: data khusus wali kelas/admin (template & kop rapor) SENGAJA
+  // tidak dimuat di sini -- lihat loadDataKhususWaliKelas() yang dipanggil
+  // dari enterDashboard() hanya untuk peran yang berhak.
   Promise.all([
     fetch('/api/guru').then(function(r){ return r.json(); }).then(function(d){ return (d && d.guruList) || []; }).catch(function(){ return []; }),
     sGet('bn-siswa-master', true),
-    sGet('bn-settings', true),
+    sGet('bn-settings', true), // format lama, dipakai sbg fallback migrasi
+    sGet('bn-bobot-nilai', true),
     sGet('bn-last-guru', false),
-    fetch('/api/auth/me').then(function(r){ return r.json(); }).then(function(d){ return (d && d.guru) || null; }).catch(function(){ return null; }),
-    sGet('bn-templates', true),
-    sGet('bn-template-aktif-id', true),
-    sGet('bn-template-settings', true) // format lama, dipakai untuk migrasi otomatis
+    fetch('/api/auth/me').then(function(r){ return r.json(); }).then(function(d){ return (d && d.guru) || null; }).catch(function(){ return null; })
   ]).then(function(res){
     state.guruList = res[0] || [];
     state.siswa = res[1] || [];
-    state.settings = res[2] || state.settings;
-    var lastGuru = res[3];
-    var sesiAktif = res[4];
-    var templatesRaw = res[5];
-    var activeIdRaw = res[6];
-    var legacyTemplate = res[7];
-    var perluMigrasi = false;
-    if(Array.isArray(templatesRaw) && templatesRaw.length){
-      state.templates = templatesRaw.map(function(t){
-        return {id: (t && t.id) || genTplId(), nama: (t && t.nama) || 'Template', settings: sanitizeTemplateSettings(t && t.settings)};
-      });
-    } else if(legacyTemplate){
-      state.templates = [{id: 'default', nama: 'Template Utama', settings: sanitizeTemplateSettings(legacyTemplate)}];
-      perluMigrasi = true;
-    } else {
-      state.templates = [{id: 'default', nama: 'Template Utama', settings: defaultTemplateSettings()}];
-      perluMigrasi = true;
-    }
-    state.templateActiveId = (activeIdRaw && state.templates.some(function(t){ return t.id === activeIdRaw; }))
-      ? activeIdRaw
-      : state.templates[0].id;
+    var legacySettings = res[2];
+    var bobotBaru = res[3];
+    if(legacySettings) state.settings = Object.assign({}, state.settings, legacySettings);
+    if(bobotBaru) state.settings = Object.assign({}, state.settings, {bobot: bobotBaru});
+    var lastGuru = res[4];
+    var sesiAktif = res[5];
     refreshGuruDropdown();
     if(lastGuru && state.guruList.some(function(g){ return g.id === lastGuru; })){
       qs('#bn-login-guru').value = lastGuru;
     }
-    qs('#bn-set-sekolah').value = state.settings.namaSekolah || '';
-    qs('#bn-set-kepsek').value = state.settings.kepsek || '';
-    qs('#bn-set-kota').value = state.settings.kota || '';
-    qs('#bn-set-tahun').value = state.settings.tahunAjaran || '';
-    qs('#bn-set-semester').value = state.settings.semester || 'Ganjil';
     fillBobotFields();
     updateNilaiDesc();
-    selectTemplate(state.templateActiveId, {silent:true});
-    if(perluMigrasi) persistTemplates();
     if(sesiAktif){
       state.guru = sesiAktif;
       enterDashboard();
